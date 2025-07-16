@@ -130,7 +130,7 @@
 
         /* Styles pour les modales (génériques) */
         .modal {
-            display: none; /* Cachée par défaut */
+            display: none; /* Cachée par défaut - CORRIGÉ */
             position: fixed; /* Reste en place même en scrollant */
             z-index: 1; /* Par-dessus tout le reste */
             left: 0;
@@ -139,7 +139,6 @@
             height: 100%; /* Pleine hauteur */
             overflow: auto; /* Permet le scroll si le contenu est trop grand */
             background-color: rgba(0,0,0,0.4); /* Fond semi-transparent noir */
-            display: flex; /* Utiliser flex pour centrer avec justify/align-items */
             justify-content: center; /* Centrer horizontalement */
             align-items: center; /* Centrer verticalement */
         }
@@ -912,13 +911,13 @@
 
         stopButton.addEventListener('click', () => {
             if (difference > 0) {
-                confirmStopModal.style.display = 'block';
+                confirmStopModal.style.display = 'flex'; // CORRIGÉ
             }
         });
 
         settingsButton.addEventListener('click', () => {
             loadSettings();
-            settingsModal.style.display = 'block';
+            settingsModal.style.display = 'flex'; // CORRIGÉ
         });
 
         closeSettingsModalButton.addEventListener('click', () => {
