@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon Appli Running 🚀</title>
+    <!-- Favicon Emoji -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👟</text></svg>" type="image/svg+xml">
     <!-- Styles CSS intégrés -->
     <style>
         body {
@@ -30,12 +32,22 @@
             font-size: 1.8em;
         }
 
-        #settingsButton {
+        #settingsButton, #authButton {
             background: none;
             border: none;
             color: white;
             font-size: 1.5em;
             cursor: pointer;
+            margin-left: 10px;
+        }
+        #authButton {
+            font-size: 1em; /* Ajuster la taille pour le texte */
+            padding: 5px 10px;
+            border: 1px solid white;
+            border-radius: 5px;
+        }
+        #authButton:hover {
+            background-color: rgba(255,255,255,0.2);
         }
 
         main {
@@ -127,6 +139,9 @@
             height: 100%; /* Pleine hauteur */
             overflow: auto; /* Permet le scroll si le contenu est trop grand */
             background-color: rgba(0,0,0,0.4); /* Fond semi-transparent noir */
+            display: flex; /* Utiliser flex pour centrer avec justify/align-items */
+            justify-content: center; /* Centrer horizontalement */
+            align-items: center; /* Centrer verticalement */
         }
 
         .modal-content {
@@ -161,6 +176,8 @@
             font-size: 1.1em;
         }
 
+        .modal-content input[type="email"],
+        .modal-content input[type="password"],
         .modal-content input[type="number"] {
             width: calc(100% - 22px);
             padding: 10px;
@@ -231,6 +248,66 @@
             border: 1px solid #eee;
         }
 
+        /* Styles pour la modale d'authentification */
+        #authModal .modal-content {
+            text-align: center; /* Centrer le contenu de la modale d'auth */
+        }
+        #authModal .modal-content input {
+            display: none; /* Masquer les champs email/password */
+        }
+        #authModal .modal-content button {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            font-size: 1.2em;
+        }
+        #authModal #googleSignInButton {
+            background-color: #DB4437; /* Couleur Google Red */
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        #authModal #googleSignInButton:hover {
+            background-color: #c0392b;
+        }
+        #authModal #googleSignInButton img {
+            width: 24px;
+            height: 24px;
+        }
+        #authModal #logoutButton {
+            background-color: #dc3545;
+            margin-top: 20px;
+        }
+        #authModal #logoutButton:hover {
+            background-color: #c82333;
+        }
+        #authModal #userStatus {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #555;
+        }
+        #authModal #toggleAuthMode {
+            display: none; /* Masquer ce bouton car on n'a plus email/password */
+        }
+
+
+        /* Masquer la section principale si l'utilisateur n'est pas connecté */
+        #appContent {
+            display: none;
+        }
+        #loadingScreen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+            font-size: 1.5em;
+            color: #555;
+        }
+
 
         /* Responsive pour les écrans plus grands */
         @media (min-width: 768px) {
@@ -246,51 +323,58 @@
 <body>
     <header>
         <h1>Ma Course</h1>
+        <button id="authButton">Connexion</button>
         <button id="settingsButton">⚙️ Paramètres</button>
     </header>
 
-    <main>
-        <section id="metrics">
-            <div class="metric-item">
-                <span class="label">Chrono:</span>
-                <span id="chrono" class="value">00:00:00</span>
-            </div>
-            <div class="metric-item">
-                <span class="label">Distance:</span>
-                <span id="distance" class="value">0.00 km</span>
-            </div>
-            <div class="metric-item">
-                <span class="label">Vitesse Instantanée:</span>
-                <span id="speed" class="value">0.0 km/h</span>
-            </div>
-            <div class="metric-item">
-                <span class="label">Vitesse Moyenne:</span>
-                <span id="averageSpeed" class="value">0.0 km/h</span>
-            </div>
-            <div class="metric-item">
-                <span class="label">Statut:</span>
-                <span id="status" class="value">Prêt(e)</span>
-            </div>
-        </section>
+    <div id="loadingScreen">
+        Chargement de l'application...
+    </div>
 
-        <section id="controls">
-            <button id="startButton" class="control-button">Démarrer</button>
-            <button id="pauseButton" disabled class="control-button">Pause</button>
-            <button id="stopButton" disabled class="stop-button">Arrêter</button>
-        </section>
+    <div id="appContent">
+        <main>
+            <section id="metrics">
+                <div class="metric-item">
+                    <span class="label">Chrono:</span>
+                    <span id="chrono" class="value">00:00:00</span>
+                </div>
+                <div class="metric-item">
+                    <span class="label">Distance:</span>
+                    <span id="distance" class="value">0.00 km</span>
+                </div>
+                <div class="metric-item">
+                    <span class="label">Vitesse Instantanée:</span>
+                    <span id="speed" class="value">0.0 km/h</span>
+                </div>
+                <div class="metric-item">
+                    <span class="label">Vitesse Moyenne:</span>
+                    <span id="averageSpeed" class="value">0.0 km/h</span>
+                </div>
+                <div class="metric-item">
+                    <span class="label">Statut:</span>
+                    <span id="status" class="value">Prêt(e)</span>
+                </div>
+            </section>
 
-        <section id="mapContainer" style="height: 300px; background-color: #eee; margin-top: 20px;">
-            <!-- La carte s'affichera ici -->
-            <p style="text-align: center; padding-top: 130px;">Carte du parcours (après la course)</p>
-        </section>
+            <section id="controls">
+                <button id="startButton" class="control-button">Démarrer</button>
+                <button id="pauseButton" disabled class="control-button">Pause</button>
+                <button id="stopButton" disabled class="stop-button">Arrêter</button>
+            </section>
 
-        <section id="pastRunsSection">
-            <h2>Mes Courses Précédentes</h2>
-            <ul id="pastRunsList">
-                <li style="text-align: center; color: #666;">Chargement des courses...</li>
-            </ul>
-        </section>
-    </main>
+            <section id="mapContainer" style="height: 300px; background-color: #eee; margin-top: 20px;">
+                <!-- La carte s'affichera ici -->
+                <p style="text-align: center; padding-top: 130px;">Carte du parcours (après la course)</p>
+            </section>
+
+            <section id="pastRunsSection">
+                <h2>Mes Courses Précédentes</h2>
+                <ul id="pastRunsList">
+                    <li style="text-align: center; color: #666;">Connectez-vous pour voir vos courses.</li>
+                </ul>
+            </section>
+        </main>
+    </div>
 
     <!-- Modale des paramètres de vitesse -->
     <div id="settingsModal" class="modal">
@@ -317,11 +401,33 @@
         </div>
     </div>
 
+    <!-- Nouvelle Modale d'authentification (Connexion/Inscription) -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeAuthModal">&times;</span>
+            <p id="userStatus">Non connecté</p>
+            <h2 id="authTitle">Connexion</h2>
+            <!-- Les champs email/password sont masqués car on utilise Google Sign-In -->
+            <!-- <label for="authEmail">Email:</label>
+            <input type="email" id="authEmail" placeholder="ton.email@example.com"><br>
+            <label for="authPassword">Mot de passe:</label>
+            <input type="password" id="authPassword" placeholder="********"><br> -->
+            <button id="googleSignInButton">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon">
+                Se connecter avec Google
+            </button>
+            <button id="logoutButton" style="display: none;">Se déconnecter</button>
+            <!-- Le bouton toggleAuthMode est masqué car on n'a plus email/password -->
+            <!-- <button id="toggleAuthMode">Pas de compte ? S'inscrire</button> -->
+        </div>
+    </div>
+
     <!-- Script JavaScript principal (inclut Firebase) -->
     <script type="module">
         // Importations Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
+                 GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Ta configuration Firebase spécifique
@@ -356,7 +462,7 @@
         const stopButton = document.getElementById('stopButton');
         const settingsButton = document.getElementById('settingsButton');
         const mapContainer = document.getElementById('mapContainer');
-        const pastRunsList = document.getElementById('pastRunsList'); // Ajout pour la liste des courses
+        const pastRunsList = document.getElementById('pastRunsList'); 
 
         // Éléments de la modale des paramètres
         const settingsModal = document.getElementById('settingsModal');
@@ -372,6 +478,19 @@
         const discardAndStopButton = document.getElementById('discardAndStopButton');
         const cancelStopButton = document.getElementById('cancelStopButton');
 
+        // Nouveaux éléments pour l'authentification
+        const authButton = document.getElementById('authButton');
+        const authModal = document.getElementById('authModal');
+        const closeAuthModalButton = document.getElementById('closeAuthModal');
+        const authTitle = document.getElementById('authTitle');
+        // const authEmailInput = document.getElementById('authEmail'); // Plus nécessaire pour Google Sign-In
+        // const authPasswordInput = document.getElementById('authPassword'); // Plus nécessaire pour Google Sign-In
+        const googleSignInButton = document.getElementById('googleSignInButton'); // Nouveau bouton
+        const logoutButton = document.getElementById('logoutButton');
+        // const toggleAuthModeButton = document.getElementById('toggleAuthMode'); // Plus nécessaire
+        const userStatusDisplay = document.getElementById('userStatus');
+        const appContent = document.getElementById('appContent');
+        const loadingScreen = document.getElementById('loadingScreen');
 
         // Variables de l'application
         let watchId; // ID pour le suivi GPS
@@ -390,59 +509,113 @@
         const ANNOUNCE_INTERVAL_SPEED = 10; // Annonce de vitesse toutes les 10 secondes
 
         // Initialisation de Firebase et authentification
-        // La condition `if (firebaseConfig)` est toujours là pour le cas où la config serait vide,
-        // mais avec ta config intégrée, elle sera toujours vraie.
-        if (firebaseConfig.apiKey) { // Vérifie une propriété de la config pour s'assurer qu'elle est valide
+        if (firebaseConfig.apiKey) {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
 
             onAuthStateChanged(auth, async (user) => {
+                loadingScreen.style.display = 'none'; // Cacher l'écran de chargement
                 if (user) {
                     userId = user.uid;
                     console.log("Utilisateur Firebase authentifié :", userId);
-                    // Charger les courses précédentes une fois l'utilisateur authentifié
-                    loadPastRuns();
+                    userStatusDisplay.textContent = `Connecté(e) : ${user.displayName || user.email || 'Anonyme'}`;
+                    authButton.textContent = 'Déconnexion'; // Change le texte du bouton d'authentification
+                    logoutButton.style.display = 'block'; // Affiche le bouton de déconnexion
+                    googleSignInButton.style.display = 'none'; // Masque le bouton Google si déjà connecté
+                    authTitle.textContent = 'Informations du compte';
+                    appContent.style.display = 'block'; // Afficher le contenu de l'app
+                    loadPastRuns(); // Charger les courses précédentes
                 } else {
-                    // Si pas d'utilisateur, tente de s'authentifier anonymement
-                    try {
-                        if (initialAuthToken) {
+                    userId = null;
+                    console.log("Aucun utilisateur Firebase connecté.");
+                    userStatusDisplay.textContent = 'Non connecté(e)';
+                    authButton.textContent = 'Connexion'; // Change le texte du bouton d'authentification
+                    logoutButton.style.display = 'none'; // Cache le bouton de déconnexion
+                    googleSignInButton.style.display = 'block'; // Affiche le bouton Google si non connecté
+                    authTitle.textContent = 'Connexion';
+                    appContent.style.display = 'none'; // Masquer le contenu de l'app si non connecté
+                    pastRunsList.innerHTML = '<li style="text-align: center; color: #666;">Connectez-vous pour voir vos courses.</li>';
+                    // Tente de se connecter anonymement si aucun utilisateur n'est connecté et qu'il y a un token initial
+                    if (initialAuthToken) {
+                        try {
                             await signInWithCustomToken(auth, initialAuthToken);
-                        } else {
-                            await signInAnonymously(auth);
+                        } catch (error) {
+                            console.error("Erreur d'authentification anonyme avec token initial:", error);
                         }
-                    } catch (error) {
-                        console.error("Erreur d'authentification Firebase :", error);
-                        // Désactiver les fonctionnalités de sauvegarde si l'authentification échoue
-                        saveAndStopButton.disabled = true;
-                        pastRunsList.innerHTML = '<li style="text-align: center; color: #dc3545;">Erreur d\'authentification Firebase. Les courses ne peuvent pas être chargées/enregistrées.</li>';
                     }
                 }
             });
         } else {
             console.warn("Configuration Firebase non trouvée ou incomplète. Les fonctionnalités de sauvegarde ne seront pas disponibles.");
-            // Si la config Firebase n'est pas trouvée, désactiver les boutons liés à la sauvegarde
             saveAndStopButton.disabled = true;
             pastRunsList.innerHTML = '<li style="text-align: center; color: #666;">Fonctionnalités Firebase non disponibles (vérifier la configuration).</li>';
+            loadingScreen.style.display = 'none';
+            appContent.style.display = 'block'; // Afficher l'app même sans Firebase si c'est le cas
         }
+
+        // --- Fonctions d'authentification ---
+        async function signInWithGoogle() {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+                authModal.style.display = 'none';
+                speak("Connexion Google réussie !");
+            } catch (error) {
+                console.error("Erreur de connexion Google :", error.message);
+                speak("Erreur de connexion Google. Veuillez réessayer.");
+                // Afficher une modale personnalisée au lieu d'alert()
+                // alert("Erreur de connexion Google : " + error.message);
+                displayCustomAlert("Erreur de connexion Google", error.message);
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+                authModal.style.display = 'none';
+                speak("Déconnexion réussie !");
+            } catch (error) {
+                console.error("Erreur de déconnexion :", error.message);
+                speak("Erreur de déconnexion.");
+                // alert("Erreur de déconnexion : " + error.message);
+                displayCustomAlert("Erreur de déconnexion", error.message);
+            }
+        }
+
+        // Fonction pour afficher une alerte personnalisée (remplace alert())
+        function displayCustomAlert(title, message) {
+            // Ici, tu peux implémenter ta propre modale d'alerte HTML/CSS/JS
+            // Pour l'instant, nous allons simuler cela avec un log et un speak
+            console.log(`ALERTE: ${title} - ${message}`);
+            speak(`${title}. ${message}`);
+            // Idéalement, tu aurais une div modale cachée que tu rendrais visible
+            // et que tu remplirais avec le titre et le message.
+            // Par exemple:
+            // const customAlertModal = document.getElementById('customAlertModal');
+            // const customAlertTitle = document.getElementById('customAlertTitle');
+            // const customAlertMessage = document.getElementById('customAlertMessage');
+            // customAlertTitle.textContent = title;
+            // customAlertMessage.textContent = message;
+            // customAlertModal.style.display = 'block';
+        }
+
 
         // --- Fonctions du Chrono ---
         function startChrono() {
             if (!running) {
-                // Si une course a été précédemment terminée et des données sont affichées,
-                // réinitialiser avant de démarrer une nouvelle course.
-                if (difference > 0 && !running) { // S'il y a un temps enregistré et que la course n'est pas en cours
-                    resetChrono(); // Efface les données de la course précédente
+                if (difference > 0 && !running) {
+                    resetChrono();
                 }
                 
                 startTime = new Date().getTime() - difference;
-                tInterval = setInterval(getShowTime, 1); // Met à jour le chrono toutes les millisecondes
+                tInterval = setInterval(getShowTime, 1);
                 running = true;
                 startButton.disabled = true;
                 pauseButton.disabled = false;
-                stopButton.disabled = false; // Le bouton Arrêter est activé au démarrage
+                stopButton.disabled = false;
                 statusDisplay.textContent = 'En cours...';
-                startTrackingGPS(); // Démarre le suivi GPS
+                startTrackingGPS();
             }
         }
 
@@ -452,9 +625,9 @@
                 running = false;
                 startButton.disabled = false;
                 pauseButton.disabled = true;
-                stopButton.disabled = false; // IMPORTANT : Le bouton Arrêter reste activé quand on est en pause
+                stopButton.disabled = false;
                 statusDisplay.textContent = 'En pause';
-                stopTrackingGPS(); // Arrête le suivi GPS temporairement
+                stopTrackingGPS();
             }
         }
 
@@ -464,26 +637,30 @@
             stopTrackingGPS();
             running = false;
 
-            // Collecte les données de la course
+            // Vérifie si l'utilisateur est connecté avant de tenter de sauvegarder
+            if (!userId) {
+                speak("Veuillez vous connecter pour enregistrer votre course.");
+                // alert("Veuillez vous connecter pour enregistrer votre course.");
+                displayCustomAlert("Sauvegarde impossible", "Veuillez vous connecter pour enregistrer votre course.");
+                confirmStopModal.style.display = 'none';
+                return;
+            }
+
             const runData = {
                 chrono: chronoDisplay.textContent,
-                distance: distance, // Utilise la valeur numérique pour l'enregistrement
-                speed: parseFloat(speedDisplay.textContent), // Vitesse instantanée finale
-                averageSpeed: parseFloat(averageSpeedDisplay.textContent), // Vitesse moyenne finale
-                trackPoints: JSON.stringify(trackPoints) // Convertit le tableau de points en chaîne JSON
+                distance: distance,
+                speed: parseFloat(speedDisplay.textContent),
+                averageSpeed: parseFloat(averageSpeedDisplay.textContent),
+                trackPoints: JSON.stringify(trackPoints)
             };
 
-            // Appelle la fonction Firebase pour sauvegarder
-            await saveRunToFirestore(runData); // Maintenant accessible car dans le même scope
+            await saveRunToFirestore(runData);
 
-            // Met à jour l'interface après l'enregistrement
             startButton.disabled = false;
             pauseButton.disabled = true;
             stopButton.disabled = true;
             statusDisplay.textContent = 'Course enregistrée !';
             confirmStopModal.style.display = 'none';
-
-            // Affiche la carte avec le parcours final
             displayMap(); 
         }
 
@@ -493,9 +670,8 @@
             stopTrackingGPS();
             running = false;
 
-            resetChrono(); // Réinitialise immédiatement toutes les métriques et la carte
+            resetChrono();
             
-            // Active le bouton Démarrer, désactive Pause/Arrêter
             startButton.disabled = false;
             pauseButton.disabled = true;
             stopButton.disabled = true;
@@ -505,20 +681,20 @@
         }
 
         function resetChrono() {
-            difference = 0; // Réinitialise le temps écoulé
+            difference = 0;
             distance = 0;
             lastPosition = null;
             trackPoints = [];
             chronoDisplay.textContent = '00:00:00';
             distanceDisplay.textContent = '0.00 km';
             speedDisplay.textContent = '0.0 km/h';
-            averageSpeedDisplay.textContent = '0.0 km/h'; // Réinitialise la vitesse moyenne
-            mapContainer.innerHTML = '<p style="text-align: center; padding-top: 130px;">Carte du parcours (après la course)</p>'; // Réinitialise l'affichage de la carte
+            averageSpeedDisplay.textContent = '0.0 km/h';
+            mapContainer.innerHTML = '<p style="text-align: center; padding-top: 130px;">Carte du parcours (après la course)</p>';
         }
 
         function getShowTime() {
             updatedTime = new Date().getTime();
-            difference = updatedTime - startTime; // Calcule le temps écoulé
+            difference = updatedTime - startTime;
 
             let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
@@ -530,19 +706,15 @@
 
             chronoDisplay.textContent = hours + ':' + minutes + ':' + seconds;
 
-            // Calcul et affichage de la vitesse moyenne
             if (difference > 0 && distance > 0) {
-                const totalHours = difference / (1000 * 60 * 60); // Temps total en heures
-                const avgSpeed = distance / totalHours; // Vitesse moyenne en km/h
+                const totalHours = difference / (1000 * 60 * 60);
+                const avgSpeed = distance / totalHours;
                 averageSpeedDisplay.textContent = avgSpeed.toFixed(1) + ' km/h';
             } else {
                 averageSpeedDisplay.textContent = '0.0 km/h';
             }
 
-
-            // Annonce de vitesse régulière (toutes les X secondes)
             if (seconds % ANNOUNCE_INTERVAL_SPEED === 0 && seconds !== lastSpeedAnnouncement && running) {
-                // Utilise la vitesse instantanée pour le guidage vocal
                 announceSpeedGuidance(parseFloat(speedDisplay.textContent));
                 lastSpeedAnnouncement = seconds;
             }
@@ -555,29 +727,20 @@
                 watchId = navigator.geolocation.watchPosition(
                     (position) => {
                         const { latitude, longitude, speed } = position.coords;
-                        trackPoints.push([latitude, longitude]); // Stocke le point pour le parcours
+                        trackPoints.push([latitude, longitude]);
 
-                        // Calcul de la distance
                         if (lastPosition) {
                             distance += calculateDistance(lastPosition.latitude, lastPosition.longitude, latitude, longitude);
                             distanceDisplay.textContent = distance.toFixed(2) + ' km';
 
-                            // Annonce de distance
-                            // Cette condition vérifie si un nouveau kilomètre entier a été atteint depuis la dernière mesure
-                            // et que la distance est un multiple de l'intervalle d'annonce
                             if (Math.floor(distance) > Math.floor(distance - calculateDistance(lastPosition.latitude, lastPosition.longitude, latitude, longitude)) && Math.floor(distance) % ANNOUNCE_INTERVAL_DISTANCE === 0) {
                                 speak(`Vous avez parcouru ${Math.floor(distance)} kilomètres.`);
                             }
                         }
                         lastPosition = { latitude, longitude };
 
-                        // Affichage de la vitesse instantanée
-                        let currentSpeedKmh = speed ? (speed * 3.6).toFixed(1) : '0.0'; // Convertir m/s en km/h
+                        let currentSpeedKmh = speed ? (speed * 3.6).toFixed(1) : '0.0';
                         speedDisplay.textContent = currentSpeedKmh + ' km/h';
-
-                        // Le guidage vocal est déclenché par le chrono pour espacer les annonces
-                        // announceSpeedGuidance(parseFloat(currentSpeedKmh));
-
                     },
                     (error) => {
                         console.error("Erreur GPS :", error);
@@ -587,7 +750,7 @@
                     {
                         enableHighAccuracy: true,
                         maximumAge: 0,
-                        timeout: 5000 // Tente de récupérer une position toutes les 5 secondes
+                        timeout: 5000
                     }
                 );
             } else {
@@ -603,9 +766,8 @@
             }
         }
 
-        // Fonction pour calculer la distance entre deux points (formule de Haversine)
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Rayon de la Terre en kilomètres
+            const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a =
@@ -613,14 +775,14 @@
                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                 Math.sin(dLon / 2) * Math.sin(dLon / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c; // Distance en km
+            return R * c;
         }
 
         // --- Fonctions vocales ---
         function speak(text) {
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'fr-FR'; // Langue française
+                utterance.lang = 'fr-FR';
                 window.speechSynthesis.speak(utterance);
             } else {
                 console.warn("L'API Speech Synthesis n'est pas supportée par ce navigateur.");
@@ -629,7 +791,7 @@
 
         function announceSpeedGuidance(currentSpeed) {
             if (currentSpeed === 0) {
-                statusDisplay.textContent = 'En attente...'; // Ou "Arrêté"
+                statusDisplay.textContent = 'En attente...';
                 return;
             }
 
@@ -657,7 +819,7 @@
             maxOptimalSpeed = parseFloat(maxSpeedInput.value);
             localStorage.setItem('minOptimalSpeed', minOptimalSpeed);
             localStorage.setItem('maxOptimalSpeed', maxOptimalSpeed);
-            settingsModal.style.display = 'none'; // Cache la modale
+            settingsModal.style.display = 'none';
             speak("Paramètres de vitesse enregistrés !");
         }
 
@@ -668,7 +830,6 @@
                 return;
             }
 
-            // Charger Leaflet si ce n'est pas déjà fait
             if (typeof L === 'undefined') {
                 const leafletCss = document.createElement('link');
                 leafletCss.rel = 'stylesheet';
@@ -685,27 +846,22 @@
         }
 
         function initializeMapWithLeaflet() {
-            // S'assurer que le conteneur de la carte est vide et a un ID
             mapContainer.innerHTML = '';
-            mapContainer.id = 'mapid'; // Leaflet a besoin d'un ID pour le conteneur
+            mapContainer.id = 'mapid';
 
-            const map = L.map('mapid').setView(trackPoints[0], 13); // Centre la carte sur le premier point
+            const map = L.map('mapid').setView(trackPoints[0], 13);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
 
-            // Dessiner le tracé
             const polyline = L.polyline(trackPoints, { color: 'blue' }).addTo(map);
-
-            // Zoomer pour que le tracé soit visible
             map.fitBounds(polyline.getBounds());
         }
 
 
         // --- Fonctions Firebase (déplacées ici pour la portée) ---
 
-        // Fonction pour sauvegarder une course dans Firestore
         async function saveRunToFirestore(runData) {
             if (!db || !userId) {
                 console.error("Firestore ou User ID non disponible. Impossible d'enregistrer la course.");
@@ -713,34 +869,30 @@
             }
 
             try {
-                // Chemin de la collection pour les courses de cet utilisateur
                 const runsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/runs`);
                 await addDoc(runsCollectionRef, {
                     ...runData,
-                    timestamp: new Date() // Ajoute un horodatage pour le tri
+                    timestamp: new Date()
                 });
                 console.log("Course enregistrée avec succès dans Firestore !");
                 speak("Course enregistrée !");
             } catch (e) {
                 console.error("Erreur lors de l'ajout du document: ", e);
                 speak("Erreur lors de l'enregistrement de la course.");
+                displayCustomAlert("Erreur lors de l'enregistrement", e.message);
             }
         }
 
-        // Fonction pour charger et afficher les courses précédentes
         function loadPastRuns() {
             if (!db || !userId) {
                 console.warn("Firestore ou User ID non disponible. Impossible de charger les courses.");
+                pastRunsList.innerHTML = '<li style="text-align: center; color: #666;">Connectez-vous pour voir vos courses.</li>';
                 return;
             }
 
             const runsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/runs`);
-            // Utilise onSnapshot pour des mises à jour en temps réel
-            // orderBy('timestamp', 'desc') est commenté car il nécessite un index Firestore
-            // et peut causer des erreurs si l'index n'est pas créé manuellement.
-            // Le tri sera fait en JavaScript pour l'instant.
             onSnapshot(runsCollectionRef, (snapshot) => {
-                pastRunsList.innerHTML = ''; // Vide la liste actuelle
+                pastRunsList.innerHTML = '';
 
                 if (snapshot.empty) {
                     pastRunsList.innerHTML = '<li style="text-align: center; color: #666;">Aucune course enregistrée pour le moment.</li>';
@@ -752,7 +904,6 @@
                     runs.push({ id: doc.id, ...doc.data() });
                 });
 
-                // Trie les courses par timestamp décroissant en JavaScript
                 runs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
                 runs.forEach((run) => {
@@ -777,17 +928,14 @@
         startButton.addEventListener('click', startChrono);
         pauseButton.addEventListener('click', pauseChrono);
 
-        // Le bouton Arrêter ouvre maintenant la modale de confirmation
         stopButton.addEventListener('click', () => {
-            // La modale s'affiche si la différence de temps est supérieure à 0 (course démarrée ou en pause)
             if (difference > 0) {
                 confirmStopModal.style.display = 'block';
             }
         });
 
-        // Événements pour la modale des paramètres
         settingsButton.addEventListener('click', () => {
-            loadSettings(); // Charge les paramètres actuels avant d'afficher la modale
+            loadSettings();
             settingsModal.style.display = 'block';
         });
 
@@ -797,19 +945,38 @@
 
         saveSettingsButton.addEventListener('click', saveSettings);
 
-        // Événements pour la nouvelle modale de confirmation d'arrêt
         closeConfirmStopModalButton.addEventListener('click', () => {
             confirmStopModal.style.display = 'none';
         });
 
-        saveAndStopButton.addEventListener('click', stopAndSaveRun); // Appelle la fonction d'arrêt et d'enregistrement
-        discardAndStopButton.addEventListener('click', stopWithoutSavingRun); // Appelle la fonction d'arrêt sans enregistrement
+        saveAndStopButton.addEventListener('click', stopAndSaveRun);
+        discardAndStopButton.addEventListener('click', stopWithoutSavingRun);
         cancelStopButton.addEventListener('click', () => {
-            confirmStopModal.style.display = 'none'; // Cache la modale si annulé
+            confirmStopModal.style.display = 'none';
         });
 
+        // Événements pour la modale d'authentification
+        authButton.addEventListener('click', () => {
+            authModal.style.display = 'flex'; // Utiliser flex pour centrer avec justify/align-items
+            if (auth.currentUser) { // Si déjà connecté
+                googleSignInButton.style.display = 'none'; // Masque le bouton Google
+                logoutButton.style.display = 'block'; // Affiche le bouton de déconnexion
+                authTitle.textContent = 'Informations du compte';
+            } else { // Si non connecté
+                googleSignInButton.style.display = 'block'; // Affiche le bouton Google
+                logoutButton.style.display = 'none'; // Masque le bouton de déconnexion
+                authTitle.textContent = 'Connexion';
+            }
+        });
 
-        // Ferme les modales si l'utilisateur clique en dehors
+        closeAuthModalButton.addEventListener('click', () => {
+            authModal.style.display = 'none';
+        });
+
+        googleSignInButton.addEventListener('click', signInWithGoogle); // Événement pour le bouton Google
+        logoutButton.addEventListener('click', handleLogout);
+
+
         window.addEventListener('click', (event) => {
             if (event.target === settingsModal) {
                 settingsModal.style.display = 'none';
@@ -817,15 +984,13 @@
             if (event.target === confirmStopModal) {
                 confirmStopModal.style.display = 'none';
             }
+            if (event.target === authModal) { // Fermer la modale d'authentification en cliquant en dehors
+                authModal.style.display = 'none';
+            }
         });
 
-        // Charger les paramètres au démarrage de l'app
         document.addEventListener('DOMContentLoaded', loadSettings);
 
-        // --- PWA (Progressive Web App) : enregistrement du service worker ---
-        // Pour que ton application se comporte comme une PWA, le fichier 'service-worker.js'
-        // doit exister séparément à la racine de ton projet.
-        // Cette partie ne fonctionnera que si l'application est servie via un serveur web (http:// ou https://)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js')
