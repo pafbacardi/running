@@ -2,7 +2,7 @@
   "name": "Mon Appli Running",
   "short_name": "RunningApp",
   "description": "Mon application de suivi de course avec sauvegarde des données.",
-  "start_url": "/index.html",
+  "start_url": "/running/index.html",
   "display": "standalone",
   "background_color": "#f4f4f4",
   "theme_color": "#4CAF50",
