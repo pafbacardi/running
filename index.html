@@ -483,11 +483,8 @@
         const authModal = document.getElementById('authModal');
         const closeAuthModalButton = document.getElementById('closeAuthModal');
         const authTitle = document.getElementById('authTitle');
-        // const authEmailInput = document.getElementById('authEmail'); // Plus nécessaire pour Google Sign-In
-        // const authPasswordInput = document.getElementById('authPassword'); // Plus nécessaire pour Google Sign-In
         const googleSignInButton = document.getElementById('googleSignInButton'); // Nouveau bouton
         const logoutButton = document.getElementById('logoutButton');
-        // const toggleAuthModeButton = document.getElementById('toggleAuthMode'); // Plus nécessaire
         const userStatusDisplay = document.getElementById('userStatus');
         const appContent = document.getElementById('appContent');
         const loadingScreen = document.getElementById('loadingScreen');
@@ -564,8 +561,6 @@
             } catch (error) {
                 console.error("Erreur de connexion Google :", error.message);
                 speak("Erreur de connexion Google. Veuillez réessayer.");
-                // Afficher une modale personnalisée au lieu d'alert()
-                // alert("Erreur de connexion Google : " + error.message);
                 displayCustomAlert("Erreur de connexion Google", error.message);
             }
         }
@@ -578,26 +573,14 @@
             } catch (error) {
                 console.error("Erreur de déconnexion :", error.message);
                 speak("Erreur de déconnexion.");
-                // alert("Erreur de déconnexion : " + error.message);
                 displayCustomAlert("Erreur de déconnexion", error.message);
             }
         }
 
         // Fonction pour afficher une alerte personnalisée (remplace alert())
         function displayCustomAlert(title, message) {
-            // Ici, tu peux implémenter ta propre modale d'alerte HTML/CSS/JS
-            // Pour l'instant, nous allons simuler cela avec un log et un speak
             console.log(`ALERTE: ${title} - ${message}`);
             speak(`${title}. ${message}`);
-            // Idéalement, tu aurais une div modale cachée que tu rendrais visible
-            // et que tu remplirais avec le titre et le message.
-            // Par exemple:
-            // const customAlertModal = document.getElementById('customAlertModal');
-            // const customAlertTitle = document.getElementById('customAlertTitle');
-            // const customAlertMessage = document.getElementById('customAlertMessage');
-            // customAlertTitle.textContent = title;
-            // customAlertMessage.textContent = message;
-            // customAlertModal.style.display = 'block';
         }
 
 
@@ -640,7 +623,6 @@
             // Vérifie si l'utilisateur est connecté avant de tenter de sauvegarder
             if (!userId) {
                 speak("Veuillez vous connecter pour enregistrer votre course.");
-                // alert("Veuillez vous connecter pour enregistrer votre course.");
                 displayCustomAlert("Sauvegarde impossible", "Veuillez vous connecter pour enregistrer votre course.");
                 confirmStopModal.style.display = 'none';
                 return;
@@ -993,7 +975,8 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/service-worker.js')
+                // Correction du chemin du Service Worker
+                navigator.serviceWorker.register('/running/service-worker.js')
                     .then(registration => {
                         console.log('ServiceWorker enregistré avec succès :', registration);
                     })
