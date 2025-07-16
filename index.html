@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Appli Running 🚀</title>
+    <!-- Styles CSS intégrés -->
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+        }
+
+        header {
+            background-color: #4CAF50; /* Vert pour la course */
+            color: white;
+            padding: 15px 0;
+            display: flex;
+            justify-content.space-between;
+            align-items: center;
+            padding: 15px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        #settingsButton {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        #metrics {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content.space-around;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-item {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            flex: 1 1 calc(50% - 40px); /* Deux colonnes sur mobile */
+            min-width: 150px;
+        }
+
+        .metric-item .label {
+            font-size: 0.9em;
+            color: #666;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .metric-item .value {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Styles généraux pour les boutons de contrôle */
+        .control-button {
+            background-color: #007bff; /* Bleu par défaut */
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .control-button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+
+        .control-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Style spécifique pour le bouton Arrêter (rouge) */
+        .stop-button {
+            background-color: #dc3545; /* Rouge */
+            color: white; /* S'assurer que le texte est blanc */
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .stop-button:hover:not(:disabled) {
+            background-color: #c82333; /* Rouge plus foncé au survol */
+        }
+
+        .stop-button:disabled {
+            background-color: #cccccc; /* Gris si désactivé */
+            cursor: not-allowed;
+        }
+
+        /* Styles pour les modales (génériques) */
+        .modal {
+            display: none; /* Cachée par défaut */
+            position: fixed; /* Reste en place même en scrollant */
+            z-index: 1; /* Par-dessus tout le reste */
+            left: 0;
+            top: 0;
+            width: 100%; /* Pleine largeur */
+            height: 100%; /* Pleine hauteur */
+            overflow: auto; /* Permet le scroll si le contenu est trop grand */
+            background-color: rgba(0,0,0,0.4); /* Fond semi-transparent noir */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% du haut et centré horizontalement */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Largeur de la modale */
+            max-width: 500px;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+        }
+
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-content label, .modal-content input {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .modal-content input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .modal-content button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 15px;
+        }
+
+        /* Styles spécifiques pour les boutons de la modale de confirmation */
+        #confirmStopModal .modal-content button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white; /* Assure que le texte est blanc */
+            border: none;
+        }
+        #confirmStopModal #saveAndStopButton {
+            background-color: #28a745; /* Vert pour enregistrer */
+        }
+        #confirmStopModal #saveAndStopButton:hover {
+            background-color: #218838;
+        }
+        #confirmStopModal #discardAndStopButton {
+            background-color: #dc3545; /* Rouge pour ne pas enregistrer */
+        }
+        #confirmStopModal #discardAndStopButton:hover {
+            background-color: #c82333;
+        }
+        #confirmStopModal #cancelStopButton {
+            background-color: #6c757d; /* Gris pour annuler */
+        }
+        #confirmStopModal #cancelStopButton:hover {
+            background-color: #5a6268;
+        }
+
+        #pastRunsSection {
+            margin-top: 30px;
+            text-align: left;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #pastRunsList {
+            list-style: none;
+            padding: 0;
+        }
+
+        #pastRunsList li {
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #eee;
+        }
+
+
+        /* Responsive pour les écrans plus grands */
+        @media (min-width: 768px) {
+            .metric-item {
+                flex: 1 1 calc(25% - 40px); /* Quatre colonnes sur desktop */
+            }
+        }
+    </style>
+    <!-- Pour les fonctionnalités PWA, ces liens sont nécessaires mais les fichiers doivent exister séparément -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#303F9F">
+</head>
+<body>
+    <header>
+        <h1>Ma Course</h1>
+        <button id="settingsButton">⚙️ Paramètres</button>
+    </header>
+
+    <main>
+        <section id="metrics">
+            <div class="metric-item">
+                <span class="label">Chrono:</span>
+                <span id="chrono" class="value">00:00:00</span>
+            </div>
+            <div class="metric-item">
+                <span class="label">Distance:</span>
+                <span id="distance" class="value">0.00 km</span>
+            </div>
+            <div class="metric-item">
+                <span class="label">Vitesse Instantanée:</span>
+                <span id="speed" class="value">0.0 km/h</span>
+            </div>
+            <div class="metric-item">
+                <span class="label">Vitesse Moyenne:</span>
+                <span id="averageSpeed" class="value">0.0 km/h</span>
+            </div>
+            <div class="metric-item">
+                <span class="label">Statut:</span>
+                <span id="status" class="value">Prêt(e)</span>
+            </div>
+        </section>
+
+        <section id="controls">
+            <button id="startButton" class="control-button">Démarrer</button>
+            <button id="pauseButton" disabled class="control-button">Pause</button>
+            <button id="stopButton" disabled class="stop-button">Arrêter</button>
+        </section>
+
+        <section id="mapContainer" style="height: 300px; background-color: #eee; margin-top: 20px;">
+            <!-- La carte s'affichera ici -->
+            <p style="text-align: center; padding-top: 130px;">Carte du parcours (après la course)</p>
+        </section>
+
+        <section id="pastRunsSection">
+            <h2>Mes Courses Précédentes</h2>
+            <ul id="pastRunsList">
+                <li style="text-align: center; color: #666;">Chargement des courses...</li>
+            </ul>
+        </section>
+    </main>
+
+    <!-- Modale des paramètres de vitesse -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeSettingsModal">&times;</span>
+            <h2>Paramètres de Vitesse</h2>
+            <label for="minSpeed">Vitesse minimale optimale (km/h):</label>
+            <input type="number" id="minSpeed" value="8" step="0.1"><br><br>
+            <label for="maxSpeed">Vitesse maximale optimale (km/h):</label>
+            <input type="number" id="maxSpeed" value="8.5" step="0.1"><br><br>
+            <button id="saveSettings">Enregistrer</button>
+        </div>
+    </div>
+
+    <!-- Nouvelle modale de confirmation d'arrêt -->
+    <div id="confirmStopModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeConfirmStopModal">&times;</span>
+            <h2>Confirmer l'arrêt de la course</h2>
+            <p>Es-tu sûr(e) de vouloir arrêter la course ?</p>
+            <button id="saveAndStopButton" class="confirm-stop-button">Oui, arrêter et enregistrer</button>
+            <button id="discardAndStopButton" class="confirm-stop-button">Oui, arrêter sans enregistrer</button>
+            <button id="cancelStopButton" class="confirm-stop-button">Non, continuer</button>
+        </div>
+    </div>
+
+    <!-- Script JavaScript principal (inclut Firebase) -->
+    <script type="module">
+        // Importations Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Ta configuration Firebase spécifique
+        const firebaseConfig = {
+            apiKey: "AIzaSyALaUl38NTJ__0SFS3fhGpmxty4iFi2I5s",
+            authDomain: "monapplirunning.firebaseapp.com",
+            projectId: "monapplirunning",
+            storageBucket: "monapplirunning.firebasestorage.app",
+            messagingSenderId: "978266538985",
+            appId: "1:978266538985:web:fa454681c9716f535f0178"
+        };
+        
+        // L'appId est maintenant directement tiré de ta configuration
+        const appId = firebaseConfig.appId;
+
+        // initialAuthToken est spécifique à l'environnement Canvas, garde-le pour la compatibilité
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app;
+        let db;
+        let auth;
+        let userId = null; // Stocke l'ID de l'utilisateur Firebase
+
+        // Éléments du DOM
+        const chronoDisplay = document.getElementById('chrono');
+        const distanceDisplay = document.getElementById('distance');
+        const speedDisplay = document.getElementById('speed');
+        const averageSpeedDisplay = document.getElementById('averageSpeed');
+        const statusDisplay = document.getElementById('status');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const stopButton = document.getElementById('stopButton');
+        const settingsButton = document.getElementById('settingsButton');
+        const mapContainer = document.getElementById('mapContainer');
+        const pastRunsList = document.getElementById('pastRunsList'); // Ajout pour la liste des courses
+
+        // Éléments de la modale des paramètres
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettingsModalButton = document.getElementById('closeSettingsModal');
+        const minSpeedInput = document.getElementById('minSpeed');
+        const maxSpeedInput = document.getElementById('maxSpeed');
+        const saveSettingsButton = document.getElementById('saveSettings');
+
+        // Éléments de la modale de confirmation d'arrêt
+        const confirmStopModal = document.getElementById('confirmStopModal');
+        const closeConfirmStopModalButton = document.getElementById('closeConfirmStopModal');
+        const saveAndStopButton = document.getElementById('saveAndStopButton');
+        const discardAndStopButton = document.getElementById('discardAndStopButton');
+        const cancelStopButton = document.getElementById('cancelStopButton');
+
+
+        // Variables de l'application
+        let watchId; // ID pour le suivi GPS
+        let startTime;
+        let updatedTime;
+        let difference = 0; // Temps écoulé en millisecondes, initialisé à 0
+        let tInterval;
+        let running = false;
+        let distance = 0; // Distance totale en km
+        let lastPosition = null;
+        let trackPoints = []; // Pour stocker le parcours
+        let minOptimalSpeed = 8; // Vitesse minimale optimale (km/h)
+        let maxOptimalSpeed = 8.5; // Vitesse maximale optimale (km/h)
+        let lastSpeedAnnouncement = 0; // Pour espacer les annonces de vitesse (en secondes)
+        const ANNOUNCE_INTERVAL_DISTANCE = 1; // Annonce tous les 1 km
+        const ANNOUNCE_INTERVAL_SPEED = 10; // Annonce de vitesse toutes les 10 secondes
+
+        // Initialisation de Firebase et authentification
+        // La condition `if (firebaseConfig)` est toujours là pour le cas où la config serait vide,
+        // mais avec ta config intégrée, elle sera toujours vraie.
+        if (firebaseConfig.apiKey) { // Vérifie une propriété de la config pour s'assurer qu'elle est valide
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    console.log("Utilisateur Firebase authentifié :", userId);
+                    // Charger les courses précédentes une fois l'utilisateur authentifié
+                    loadPastRuns();
+                } else {
+                    // Si pas d'utilisateur, tente de s'authentifier anonymement
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error("Erreur d'authentification Firebase :", error);
+                        // Désactiver les fonctionnalités de sauvegarde si l'authentification échoue
+                        saveAndStopButton.disabled = true;
+                        pastRunsList.innerHTML = '<li style="text-align: center; color: #dc3545;">Erreur d\'authentification Firebase. Les courses ne peuvent pas être chargées/enregistrées.</li>';
+                    }
+                }
+            });
+        } else {
+            console.warn("Configuration Firebase non trouvée ou incomplète. Les fonctionnalités de sauvegarde ne seront pas disponibles.");
+            // Si la config Firebase n'est pas trouvée, désactiver les boutons liés à la sauvegarde
+            saveAndStopButton.disabled = true;
+            pastRunsList.innerHTML = '<li style="text-align: center; color: #666;">Fonctionnalités Firebase non disponibles (vérifier la configuration).</li>';
+        }
+
+        // --- Fonctions du Chrono ---
+        function startChrono() {
+            if (!running) {
+                // Si une course a été précédemment terminée et des données sont affichées,
+                // réinitialiser avant de démarrer une nouvelle course.
+                if (difference > 0 && !running) { // S'il y a un temps enregistré et que la course n'est pas en cours
+                    resetChrono(); // Efface les données de la course précédente
+                }
+                
+                startTime = new Date().getTime() - difference;
+                tInterval = setInterval(getShowTime, 1); // Met à jour le chrono toutes les millisecondes
+                running = true;
+                startButton.disabled = true;
+                pauseButton.disabled = false;
+                stopButton.disabled = false; // Le bouton Arrêter est activé au démarrage
+                statusDisplay.textContent = 'En cours...';
+                startTrackingGPS(); // Démarre le suivi GPS
+            }
+        }
+
+        function pauseChrono() {
+            if (running) {
+                clearInterval(tInterval);
+                running = false;
+                startButton.disabled = false;
+                pauseButton.disabled = true;
+                stopButton.disabled = false; // IMPORTANT : Le bouton Arrêter reste activé quand on est en pause
+                statusDisplay.textContent = 'En pause';
+                stopTrackingGPS(); // Arrête le suivi GPS temporairement
+            }
+        }
+
+        // Fonction pour arrêter et enregistrer la course
+        async function stopAndSaveRun() {
+            clearInterval(tInterval);
+            stopTrackingGPS();
+            running = false;
+
+            // Collecte les données de la course
+            const runData = {
+                chrono: chronoDisplay.textContent,
+                distance: distance, // Utilise la valeur numérique pour l'enregistrement
+                speed: parseFloat(speedDisplay.textContent), // Vitesse instantanée finale
+                averageSpeed: parseFloat(averageSpeedDisplay.textContent), // Vitesse moyenne finale
+                trackPoints: JSON.stringify(trackPoints) // Convertit le tableau de points en chaîne JSON
+            };
+
+            // Appelle la fonction Firebase pour sauvegarder
+            await saveRunToFirestore(runData); // Maintenant accessible car dans le même scope
+
+            // Met à jour l'interface après l'enregistrement
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            stopButton.disabled = true;
+            statusDisplay.textContent = 'Course enregistrée !';
+            confirmStopModal.style.display = 'none';
+
+            // Affiche la carte avec le parcours final
+            displayMap(); 
+        }
+
+        // Fonction pour arrêter sans enregistrer la course
+        function stopWithoutSavingRun() {
+            clearInterval(tInterval);
+            stopTrackingGPS();
+            running = false;
+
+            resetChrono(); // Réinitialise immédiatement toutes les métriques et la carte
+            
+            // Active le bouton Démarrer, désactive Pause/Arrêter
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            stopButton.disabled = true;
+
+            statusDisplay.textContent = 'Prêt(e)';
+            confirmStopModal.style.display = 'none';
+        }
+
+        function resetChrono() {
+            difference = 0; // Réinitialise le temps écoulé
+            distance = 0;
+            lastPosition = null;
+            trackPoints = [];
+            chronoDisplay.textContent = '00:00:00';
+            distanceDisplay.textContent = '0.00 km';
+            speedDisplay.textContent = '0.0 km/h';
+            averageSpeedDisplay.textContent = '0.0 km/h'; // Réinitialise la vitesse moyenne
+            mapContainer.innerHTML = '<p style="text-align: center; padding-top: 130px;">Carte du parcours (après la course)</p>'; // Réinitialise l'affichage de la carte
+        }
+
+        function getShowTime() {
+            updatedTime = new Date().getTime();
+            difference = updatedTime - startTime; // Calcule le temps écoulé
+
+            let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            hours = (hours < 10) ? "0" + hours : hours;
+            minutes = (minutes < 10) ? "0" + minutes : minutes;
+            seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+            chronoDisplay.textContent = hours + ':' + minutes + ':' + seconds;
+
+            // Calcul et affichage de la vitesse moyenne
+            if (difference > 0 && distance > 0) {
+                const totalHours = difference / (1000 * 60 * 60); // Temps total en heures
+                const avgSpeed = distance / totalHours; // Vitesse moyenne en km/h
+                averageSpeedDisplay.textContent = avgSpeed.toFixed(1) + ' km/h';
+            } else {
+                averageSpeedDisplay.textContent = '0.0 km/h';
+            }
+
+
+            // Annonce de vitesse régulière (toutes les X secondes)
+            if (seconds % ANNOUNCE_INTERVAL_SPEED === 0 && seconds !== lastSpeedAnnouncement && running) {
+                // Utilise la vitesse instantanée pour le guidage vocal
+                announceSpeedGuidance(parseFloat(speedDisplay.textContent));
+                lastSpeedAnnouncement = seconds;
+            }
+        }
+
+        // --- Fonctions GPS ---
+        function startTrackingGPS() {
+            if ("geolocation" in navigator) {
+                statusDisplay.textContent = 'Localisation GPS...';
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const { latitude, longitude, speed } = position.coords;
+                        trackPoints.push([latitude, longitude]); // Stocke le point pour le parcours
+
+                        // Calcul de la distance
+                        if (lastPosition) {
+                            distance += calculateDistance(lastPosition.latitude, lastPosition.longitude, latitude, longitude);
+                            distanceDisplay.textContent = distance.toFixed(2) + ' km';
+
+                            // Annonce de distance
+                            // Cette condition vérifie si un nouveau kilomètre entier a été atteint depuis la dernière mesure
+                            // et que la distance est un multiple de l'intervalle d'annonce
+                            if (Math.floor(distance) > Math.floor(distance - calculateDistance(lastPosition.latitude, lastPosition.longitude, latitude, longitude)) && Math.floor(distance) % ANNOUNCE_INTERVAL_DISTANCE === 0) {
+                                speak(`Vous avez parcouru ${Math.floor(distance)} kilomètres.`);
+                            }
+                        }
+                        lastPosition = { latitude, longitude };
+
+                        // Affichage de la vitesse instantanée
+                        let currentSpeedKmh = speed ? (speed * 3.6).toFixed(1) : '0.0'; // Convertir m/s en km/h
+                        speedDisplay.textContent = currentSpeedKmh + ' km/h';
+
+                        // Le guidage vocal est déclenché par le chrono pour espacer les annonces
+                        // announceSpeedGuidance(parseFloat(currentSpeedKmh));
+
+                    },
+                    (error) => {
+                        console.error("Erreur GPS :", error);
+                        statusDisplay.textContent = 'Erreur GPS !';
+                        speak("Problème de signal GPS.");
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 0,
+                        timeout: 5000 // Tente de récupérer une position toutes les 5 secondes
+                    }
+                );
+            } else {
+                statusDisplay.textContent = 'GPS non supporté par votre navigateur.';
+                speak("Votre appareil ne supporte pas le GPS.");
+            }
+        }
+
+        function stopTrackingGPS() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+        }
+
+        // Fonction pour calculer la distance entre deux points (formule de Haversine)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Rayon de la Terre en kilomètres
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distance en km
+        }
+
+        // --- Fonctions vocales ---
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'fr-FR'; // Langue française
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn("L'API Speech Synthesis n'est pas supportée par ce navigateur.");
+            }
+        }
+
+        function announceSpeedGuidance(currentSpeed) {
+            if (currentSpeed === 0) {
+                statusDisplay.textContent = 'En attente...'; // Ou "Arrêté"
+                return;
+            }
+
+            if (currentSpeed < minOptimalSpeed) {
+                statusDisplay.textContent = `Accélérez ! (${currentSpeed} km/h)`;
+                speak("Accélérez !");
+            } else if (currentSpeed > maxOptimalSpeed) {
+                statusDisplay.textContent = `Ralentissez ! (${currentSpeed} km/h)`;
+                speak("Ralentissez !");
+            } else {
+                statusDisplay.textContent = `Bon rythme ! (${currentSpeed} km/h)`;
+            }
+        }
+
+        // --- Gestion des paramètres ---
+        function loadSettings() {
+            minOptimalSpeed = parseFloat(localStorage.getItem('minOptimalSpeed')) || 8;
+            maxOptimalSpeed = parseFloat(localStorage.getItem('maxOptimalSpeed')) || 8.5;
+            minSpeedInput.value = minOptimalSpeed;
+            maxSpeedInput.value = maxOptimalSpeed;
+        }
+
+        function saveSettings() {
+            minOptimalSpeed = parseFloat(minSpeedInput.value);
+            maxOptimalSpeed = parseFloat(maxSpeedInput.value);
+            localStorage.setItem('minOptimalSpeed', minOptimalSpeed);
+            localStorage.setItem('maxOptimalSpeed', maxOptimalSpeed);
+            settingsModal.style.display = 'none'; // Cache la modale
+            speak("Paramètres de vitesse enregistrés !");
+        }
+
+        // --- Initialisation de la carte (après la course) ---
+        function displayMap() {
+            if (trackPoints.length === 0) {
+                mapContainer.innerHTML = '<p style="text-align: center; padding-top: 130px;">Pas de parcours enregistré.</p>';
+                return;
+            }
+
+            // Charger Leaflet si ce n'est pas déjà fait
+            if (typeof L === 'undefined') {
+                const leafletCss = document.createElement('link');
+                leafletCss.rel = 'stylesheet';
+                leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                document.head.appendChild(leafletCss);
+
+                const leafletJs = document.createElement('script');
+                leafletJs.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                leafletJs.onload = initializeMapWithLeaflet;
+                document.head.appendChild(leafletJs);
+            } else {
+                initializeMapWithLeaflet();
+            }
+        }
+
+        function initializeMapWithLeaflet() {
+            // S'assurer que le conteneur de la carte est vide et a un ID
+            mapContainer.innerHTML = '';
+            mapContainer.id = 'mapid'; // Leaflet a besoin d'un ID pour le conteneur
+
+            const map = L.map('mapid').setView(trackPoints[0], 13); // Centre la carte sur le premier point
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            // Dessiner le tracé
+            const polyline = L.polyline(trackPoints, { color: 'blue' }).addTo(map);
+
+            // Zoomer pour que le tracé soit visible
+            map.fitBounds(polyline.getBounds());
+        }
+
+
+        // --- Fonctions Firebase (déplacées ici pour la portée) ---
+
+        // Fonction pour sauvegarder une course dans Firestore
+        async function saveRunToFirestore(runData) {
+            if (!db || !userId) {
+                console.error("Firestore ou User ID non disponible. Impossible d'enregistrer la course.");
+                return;
+            }
+
+            try {
+                // Chemin de la collection pour les courses de cet utilisateur
+                const runsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/runs`);
+                await addDoc(runsCollectionRef, {
+                    ...runData,
+                    timestamp: new Date() // Ajoute un horodatage pour le tri
+                });
+                console.log("Course enregistrée avec succès dans Firestore !");
+                speak("Course enregistrée !");
+            } catch (e) {
+                console.error("Erreur lors de l'ajout du document: ", e);
+                speak("Erreur lors de l'enregistrement de la course.");
+            }
+        }
+
+        // Fonction pour charger et afficher les courses précédentes
+        function loadPastRuns() {
+            if (!db || !userId) {
+                console.warn("Firestore ou User ID non disponible. Impossible de charger les courses.");
+                return;
+            }
+
+            const runsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/runs`);
+            // Utilise onSnapshot pour des mises à jour en temps réel
+            // orderBy('timestamp', 'desc') est commenté car il nécessite un index Firestore
+            // et peut causer des erreurs si l'index n'est pas créé manuellement.
+            // Le tri sera fait en JavaScript pour l'instant.
+            onSnapshot(runsCollectionRef, (snapshot) => {
+                pastRunsList.innerHTML = ''; // Vide la liste actuelle
+
+                if (snapshot.empty) {
+                    pastRunsList.innerHTML = '<li style="text-align: center; color: #666;">Aucune course enregistrée pour le moment.</li>';
+                    return;
+                }
+
+                const runs = [];
+                snapshot.forEach((doc) => {
+                    runs.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Trie les courses par timestamp décroissant en JavaScript
+                runs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+
+                runs.forEach((run) => {
+                    const li = document.createElement('li');
+                    const date = run.timestamp ? new Date(run.timestamp.seconds * 1000).toLocaleString('fr-FR') : 'Date inconnue';
+                    li.innerHTML = `
+                        <strong>${date}</strong><br>
+                        Durée: ${run.chrono || 'N/A'}<br>
+                        Distance: ${run.distance ? run.distance.toFixed(2) + ' km' : 'N/A'}<br>
+                        Vitesse moyenne: ${run.averageSpeed ? run.averageSpeed.toFixed(1) + ' km/h' : 'N/A'}
+                    `;
+                    pastRunsList.appendChild(li);
+                });
+            }, (error) => {
+                console.error("Erreur lors du chargement des courses :", error);
+                pastRunsList.innerHTML = '<li style="text-align: center; color: #dc3545;">Erreur de chargement des courses.</li>';
+            });
+        }
+
+
+        // --- Événements ---
+        startButton.addEventListener('click', startChrono);
+        pauseButton.addEventListener('click', pauseChrono);
+
+        // Le bouton Arrêter ouvre maintenant la modale de confirmation
+        stopButton.addEventListener('click', () => {
+            // La modale s'affiche si la différence de temps est supérieure à 0 (course démarrée ou en pause)
+            if (difference > 0) {
+                confirmStopModal.style.display = 'block';
+            }
+        });
+
+        // Événements pour la modale des paramètres
+        settingsButton.addEventListener('click', () => {
+            loadSettings(); // Charge les paramètres actuels avant d'afficher la modale
+            settingsModal.style.display = 'block';
+        });
+
+        closeSettingsModalButton.addEventListener('click', () => {
+            settingsModal.style.display = 'none';
+        });
+
+        saveSettingsButton.addEventListener('click', saveSettings);
+
+        // Événements pour la nouvelle modale de confirmation d'arrêt
+        closeConfirmStopModalButton.addEventListener('click', () => {
+            confirmStopModal.style.display = 'none';
+        });
+
+        saveAndStopButton.addEventListener('click', stopAndSaveRun); // Appelle la fonction d'arrêt et d'enregistrement
+        discardAndStopButton.addEventListener('click', stopWithoutSavingRun); // Appelle la fonction d'arrêt sans enregistrement
+        cancelStopButton.addEventListener('click', () => {
+            confirmStopModal.style.display = 'none'; // Cache la modale si annulé
+        });
+
+
+        // Ferme les modales si l'utilisateur clique en dehors
+        window.addEventListener('click', (event) => {
+            if (event.target === settingsModal) {
+                settingsModal.style.display = 'none';
+            }
+            if (event.target === confirmStopModal) {
+                confirmStopModal.style.display = 'none';
+            }
+        });
+
+        // Charger les paramètres au démarrage de l'app
+        document.addEventListener('DOMContentLoaded', loadSettings);
+
+        // --- PWA (Progressive Web App) : enregistrement du service worker ---
+        // Pour que ton application se comporte comme une PWA, le fichier 'service-worker.js'
+        // doit exister séparément à la racine de ton projet.
+        // Cette partie ne fonctionnera que si l'application est servie via un serveur web (http:// ou https://)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker enregistré avec succès :', registration);
+                    })
+                    .catch(error => {
+                        console.log('Échec de l\'enregistrement du ServiceWorker :', error);
+                        console.warn("Le Service Worker nécessite un serveur web (http:// ou https://) pour fonctionner.");
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
