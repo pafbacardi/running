@@ -76,8 +76,13 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            flex: 1 1 calc(50% - 40px); /* Deux colonnes sur mobile */
-            min-width: 150px;
+            /* Force 2 colonnes sur toutes les tailles d'écran, en tenant compte du gap */
+            flex: 0 0 calc(50% - 10px); /* 50% de la largeur du conteneur moins la moitié du gap */
+            box-sizing: border-box; /* Inclure padding et border dans la largeur */
+        }
+
+        .metric-item-full-width {
+            flex: 0 0 100%; /* Prend toute la largeur pour le statut */
         }
 
         .metric-item .label {
@@ -328,12 +333,7 @@
         }
 
 
-        /* Responsive pour les écrans plus grands */
-        @media (min-width: 768px) {
-            .metric-item {
-                flex: 1 1 calc(25% - 40px); /* Quatre colonnes sur desktop */
-            }
-        }
+        /* La media query pour 4 colonnes a été supprimée pour forcer 2 colonnes partout */
     </style>
     <!-- Pour les fonctionnalités PWA, ces liens sont nécessaires mais les fichiers doivent exister séparément -->
     <link rel="manifest" href="manifest.json">
@@ -344,7 +344,7 @@
         <h1>Ma Course</h1>
         <button id="authButton">Connexion</button>
         <button id="settingsButton">⚙️ Paramètres</button>
-        <span id="versionDisplay">v1.0.2</span>
+        <span id="versionDisplay">v1.0.4</span>
     </header>
 
     <div id="loadingScreen">
@@ -370,7 +370,7 @@
                     <span class="label">Vitesse Moyenne:</span>
                     <span id="averageSpeed" class="value">0.0 km/h</span>
                 </div>
-                <div class="metric-item">
+                <div class="metric-item metric-item-full-width"> <!-- Ajout de la classe pour la pleine largeur -->
                     <span class="label">Statut:</span>
                     <span id="status" class="value">Prêt(e)</span>
                 </div>
@@ -938,24 +938,28 @@
 
         // --- Fonctions Wake Lock ---
         async function requestWakeLock() {
+            console.log("Tentative d'acquisition du Wake Lock...");
             if ('wakeLock' in navigator) {
                 try {
                     wakeLock = await navigator.wakeLock.request('screen');
-                    wakeLock.addEventListener('release', () => {
-                        console.log('Wake Lock a été relâché.');
-                    });
                     console.log('Wake Lock acquis !');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Wake Lock a été relâché par le système ou l\'utilisateur.');
+                        wakeLock = null; // Réinitialiser la variable après le relâchement
+                    });
                 } catch (err) {
-                    console.error(`${err.name}, ${err.message}`);
-                    displayCustomAlert("Erreur Wake Lock", "Impossible de maintenir l'écran allumé.");
+                    console.error(`Erreur lors de l'acquisition du Wake Lock: ${err.name}, ${err.message}`);
+                    displayCustomAlert("Erreur Wake Lock", `Impossible de maintenir l'écran allumé: ${err.message}. Vérifiez le mode économie d'énergie.`);
                 }
             } else {
                 console.warn("L'API Wake Lock n'est pas supportée par ce navigateur.");
+                displayCustomAlert("Wake Lock non supporté", "Votre navigateur ne supporte pas la fonction de maintien de l'écran allumé.");
             }
         }
 
         async function releaseWakeLock() {
             if (wakeLock) {
+                console.log("Tentative de libération du Wake Lock...");
                 try {
                     await wakeLock.release();
                     wakeLock = null;
@@ -963,6 +967,8 @@
                 } catch (err) {
                     console.error(`Erreur lors de la libération du Wake Lock: ${err.name}, ${err.message}`);
                 }
+            } else {
+                console.log("Aucun Wake Lock actif à libérer.");
             }
         }
 
@@ -1036,6 +1042,8 @@
             if (wakeLock !== null && document.visibilityState === 'visible' && running) {
                 console.log('Page visible, tentant de ré-acquérir le Wake Lock.');
                 await requestWakeLock();
+            } else if (wakeLock && document.visibilityState === 'hidden') {
+                console.log('Page cachée, Wake Lock pourrait être relâché par le système.');
             }
         });
 
