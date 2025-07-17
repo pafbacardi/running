@@ -130,7 +130,7 @@
 
         /* Styles pour les modales (génériques) */
         .modal {
-            display: none; /* Cachée par défaut - CORRIGÉ */
+            display: none; /* Cachée par défaut */
             position: fixed; /* Reste en place même en scrollant */
             z-index: 1; /* Par-dessus tout le reste */
             left: 0;
@@ -139,7 +139,6 @@
             height: 100%; /* Pleine hauteur */
             overflow: auto; /* Permet le scroll si le contenu est trop grand */
             background-color: rgba(0,0,0,0.4); /* Fond semi-transparent noir */
-            display: flex; /* Utiliser flex pour centrer avec justify/align-items */
             justify-content: center; /* Centrer horizontalement */
             align-items: center; /* Centrer verticalement */
         }
@@ -304,6 +303,20 @@
             display: none; /* Masquer ce bouton car on n'a plus email/password */
         }
 
+        /* Styles pour la nouvelle modale de détails de course */
+        #runDetailsModal .modal-content {
+            text-align: left;
+        }
+        #runDetailsModal #runDetailsMap {
+            height: 250px; /* Taille de la carte dans la modale */
+            background-color: #eee;
+            margin-top: 15px;
+            border-radius: 5px;
+        }
+        #runDetailsModal p {
+            margin-bottom: 5px;
+        }
+
 
         /* Masquer la section principale si l'utilisateur n'est pas connecté */
         #appContent {
@@ -432,13 +445,26 @@
         </div>
     </div>
 
+    <!-- Nouvelle Modale pour les détails de la course -->
+    <div id="runDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeRunDetailsModal">&times;</span>
+            <h2 id="runDetailsTitle">Détails de la Course</h2>
+            <p><strong>Date:</strong> <span id="runDetailsDate"></span></p>
+            <p><strong>Durée:</strong> <span id="runDetailsChrono"></span></p>
+            <p><strong>Distance:</strong> <span id="runDetailsDistance"></span></p>
+            <p><strong>Vitesse Moyenne:</strong> <span id="runDetailsAverageSpeed"></span></p>
+            <div id="runDetailsMap"></div>
+        </div>
+    </div>
+
     <!-- Script JavaScript principal (inclut Firebase) -->
     <script type="module">
         // Importations Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, 
                  GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Ta configuration Firebase spécifique
         const firebaseConfig = {
@@ -460,6 +486,7 @@
         let db;
         let auth;
         let userId = null; // Stocke l'ID de l'utilisateur Firebase
+        let currentMap = null; // Pour stocker l'instance de la carte Leaflet
 
         // Éléments du DOM
         const chronoDisplay = document.getElementById('chrono');
@@ -498,6 +525,17 @@
         const userStatusDisplay = document.getElementById('userStatus');
         const appContent = document.getElementById('appContent');
         const loadingScreen = document.getElementById('loadingScreen');
+
+        // Nouveaux éléments pour la modale de détails de course
+        const runDetailsModal = document.getElementById('runDetailsModal');
+        const closeRunDetailsModalButton = document.getElementById('closeRunDetailsModal');
+        const runDetailsTitle = document.getElementById('runDetailsTitle');
+        const runDetailsDate = document.getElementById('runDetailsDate');
+        const runDetailsChrono = document.getElementById('runDetailsChrono');
+        const runDetailsDistance = document.getElementById('runDetailsDistance');
+        const runDetailsAverageSpeed = document.getElementById('runDetailsAverageSpeed');
+        const runDetailsMapContainer = document.getElementById('runDetailsMap');
+
 
         // Variables de l'application
         let watchId; // ID pour le suivi GPS
@@ -653,7 +691,7 @@
             stopButton.disabled = true;
             statusDisplay.textContent = 'Course enregistrée !';
             confirmStopModal.style.display = 'none';
-            displayMap(); 
+            displayMap(trackPoints); // Affiche la carte de la course qui vient d'être terminée
         }
 
         // Fonction pour arrêter sans enregistrer la course
@@ -682,6 +720,10 @@
             speedDisplay.textContent = '0.0 km/h';
             averageSpeedDisplay.textContent = '0.0 km/h';
             mapContainer.innerHTML = '<p style="text-align: center; padding-top: 130px;">Carte du parcours (après la course)</p>';
+            if (currentMap) { // Détruit l'instance Leaflet si elle existe
+                currentMap.remove();
+                currentMap = null;
+            }
         }
 
         function getShowTime() {
@@ -815,13 +857,27 @@
             speak("Paramètres de vitesse enregistrés !");
         }
 
-        // --- Initialisation de la carte (après la course) ---
-        function displayMap() {
-            if (trackPoints.length === 0) {
-                mapContainer.innerHTML = '<p style="text-align: center; padding-top: 130px;">Pas de parcours enregistré.</p>';
+        // --- Initialisation de la carte (générique) ---
+        // Cette fonction est maintenant plus générique et peut être utilisée pour afficher
+        // un parcours sur n'importe quel conteneur de carte donné.
+        function displayMap(points, mapElementId = 'mapid') {
+            if (!points || points.length === 0) {
+                document.getElementById(mapElementId).innerHTML = '<p style="text-align: center; padding-top: 130px;">Pas de parcours enregistré.</p>';
                 return;
             }
 
+            // Si une carte existe déjà dans ce conteneur, la détruire avant d'en créer une nouvelle
+            if (currentMap && mapElementId === 'mapid') { // Seulement pour la carte principale
+                currentMap.remove();
+                currentMap = null;
+            } else if (mapElementId === 'runDetailsMap' && L.DomUtil.get(mapElementId)._leaflet_id) {
+                 // Pour la carte de la modale, si elle a déjà été initialisée, la détruire
+                L.DomUtil.get(mapElementId)._leaflet_id = null; // Réinitialiser l'ID Leaflet
+                document.getElementById(mapElementId).innerHTML = ''; // Vider le conteneur
+            }
+
+
+            // Charger Leaflet si ce n'est pas déjà fait
             if (typeof L === 'undefined') {
                 const leafletCss = document.createElement('link');
                 leafletCss.rel = 'stylesheet';
@@ -830,25 +886,55 @@
 
                 const leafletJs = document.createElement('script');
                 leafletJs.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-                leafletJs.onload = initializeMapWithLeaflet;
+                leafletJs.onload = () => initializeMapWithLeaflet(points, mapElementId); // Appelle avec les points
                 document.head.appendChild(leafletJs);
             } else {
-                initializeMapWithLeaflet();
+                initializeMapWithLeaflet(points, mapElementId); // Appelle directement avec les points
             }
         }
 
-        function initializeMapWithLeaflet() {
-            mapContainer.innerHTML = '';
-            mapContainer.id = 'mapid';
+        function initializeMapWithLeaflet(points, mapElementId) {
+            const mapElement = document.getElementById(mapElementId);
+            if (!mapElement) {
+                console.error(`Conteneur de carte avec ID '${mapElementId}' non trouvé.`);
+                return;
+            }
 
-            const map = L.map('mapid').setView(trackPoints[0], 13);
+            // Assurez-vous que le conteneur est vide et prêt pour Leaflet
+            mapElement.innerHTML = '';
+            
+            let mapInstance;
+            try {
+                // Vérifie si une instance de carte existe déjà pour cet élément
+                if (mapElement._leaflet_id) {
+                    mapInstance = L.map(mapElementId).setView(points[0], 13);
+                } else {
+                    mapInstance = L.map(mapElementId).setView(points[0], 13);
+                }
+            } catch (e) {
+                console.error("Erreur lors de l'initialisation de la carte Leaflet:", e);
+                mapElement.innerHTML = '<p style="text-align: center; padding-top: 100px; color: red;">Erreur de chargement de la carte.</p>';
+                return;
+            }
+            
+            // Stocke l'instance de la carte principale pour pouvoir la détruire au reset
+            if (mapElementId === 'mapid') {
+                currentMap = mapInstance;
+            }
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
+            }).addTo(mapInstance);
 
-            const polyline = L.polyline(trackPoints, { color: 'blue' }).addTo(map);
-            map.fitBounds(polyline.getBounds());
+            const polyline = L.polyline(points, { color: 'blue' }).addTo(mapInstance);
+            mapInstance.fitBounds(polyline.getBounds());
+
+            // Invalider la taille de la carte après l'ouverture de la modale pour s'assurer qu'elle s'affiche correctement
+            if (mapElementId === 'runDetailsMap') {
+                setTimeout(() => {
+                    mapInstance.invalidateSize();
+                }, 100); // Petit délai pour laisser la modale s'ouvrir
+            }
         }
 
 
@@ -900,7 +986,7 @@
 
                 runs.forEach((run) => {
                     const li = document.createElement('li');
-                    li.classList.add('past-run-item'); // Ajout d'une classe pour le style si besoin
+                    li.classList.add('past-run-item');
                     li.dataset.runId = run.id; // Stocke l'ID du document Firebase
 
                     const date = run.timestamp ? new Date(run.timestamp.seconds * 1000).toLocaleString('fr-FR') : 'Date inconnue';
@@ -919,6 +1005,46 @@
                 console.error("Erreur lors du chargement des courses :", error);
                 pastRunsList.innerHTML = '<li style="text-align: center; color: #dc3545;">Erreur de chargement des courses.</li>';
             });
+        }
+
+        // Nouvelle fonction pour afficher les détails d'une course
+        async function showRunDetails(runId) {
+            if (!db || !userId || !runId) {
+                console.error("Impossible d'afficher les détails de la course: DB, User ID ou Run ID manquant.");
+                return;
+            }
+
+            try {
+                const runDocRef = doc(db, `artifacts/${appId}/users/${userId}/runs`, runId);
+                const runDocSnap = await getDoc(runDocRef);
+
+                if (runDocSnap.exists()) {
+                    const runData = runDocSnap.data();
+                    console.log("Détails de la course récupérés:", runData);
+
+                    // Mettre à jour le contenu de la modale
+                    runDetailsDate.textContent = runData.timestamp ? new Date(runData.timestamp.seconds * 1000).toLocaleString('fr-FR') : 'N/A';
+                    runDetailsChrono.textContent = runData.chrono || 'N/A';
+                    runDetailsDistance.textContent = runData.distance ? runData.distance.toFixed(2) + ' km' : 'N/A';
+                    runDetailsAverageSpeed.textContent = runData.averageSpeed ? runData.averageSpeed.toFixed(1) + ' km/h' : 'N/A';
+
+                    // Afficher la carte du parcours
+                    if (runData.trackPoints) {
+                        const parsedTrackPoints = JSON.parse(runData.trackPoints);
+                        displayMap(parsedTrackPoints, 'runDetailsMap'); // Utilise la carte de la modale
+                    } else {
+                        runDetailsMapContainer.innerHTML = '<p style="text-align: center; padding-top: 100px;">Pas de données de parcours.</p>';
+                    }
+
+                    runDetailsModal.style.display = 'flex'; // Afficher la modale
+                } else {
+                    console.warn("Aucun document trouvé pour l'ID de course:", runId);
+                    displayCustomAlert("Erreur", "Course non trouvée.");
+                }
+            } catch (error) {
+                console.error("Erreur lors de la récupération des détails de la course:", error);
+                displayCustomAlert("Erreur", "Impossible de charger les détails de la course.");
+            }
         }
 
 
@@ -955,14 +1081,14 @@
 
         // Événements pour la modale d'authentification
         authButton.addEventListener('click', () => {
-            authModal.style.display = 'flex'; // Utiliser flex pour centrer avec justify/align-items
-            if (auth.currentUser) { // Si déjà connecté
-                googleSignInButton.style.display = 'none'; // Masque le bouton Google
-                logoutButton.style.display = 'block'; // Affiche le bouton de déconnexion
+            authModal.style.display = 'flex';
+            if (auth.currentUser) {
+                googleSignInButton.style.display = 'none';
+                logoutButton.style.display = 'block';
                 authTitle.textContent = 'Informations du compte';
-            } else { // Si non connecté
-                googleSignInButton.style.display = 'block'; // Affiche le bouton Google
-                logoutButton.style.display = 'none'; // Masque le bouton de déconnexion
+            } else {
+                googleSignInButton.style.display = 'block';
+                logoutButton.style.display = 'none';
                 authTitle.textContent = 'Connexion';
             }
         });
@@ -971,8 +1097,26 @@
             authModal.style.display = 'none';
         });
 
-        googleSignInButton.addEventListener('click', signInWithGoogle); // Événement pour le bouton Google
+        googleSignInButton.addEventListener('click', signInWithGoogle);
         logoutButton.addEventListener('click', handleLogout);
+
+        // Événements pour la nouvelle modale de détails de course
+        closeRunDetailsModalButton.addEventListener('click', () => {
+            runDetailsModal.style.display = 'none';
+            // Détruire l'instance de la carte Leaflet quand la modale est fermée
+            if (L.DomUtil.get('runDetailsMap')._leaflet_id) {
+                L.DomUtil.get('runDetailsMap')._leaflet_id = null; // Réinitialiser l'ID Leaflet
+                runDetailsMapContainer.innerHTML = ''; // Vider le conteneur
+            }
+        });
+
+        // Événement de clic sur la liste des courses passées (délégation)
+        pastRunsList.addEventListener('click', (event) => {
+            const listItem = event.target.closest('.past-run-item');
+            if (listItem && listItem.dataset.runId) {
+                showRunDetails(listItem.dataset.runId);
+            }
+        });
 
 
         window.addEventListener('click', (event) => {
@@ -982,8 +1126,16 @@
             if (event.target === confirmStopModal) {
                 confirmStopModal.style.display = 'none';
             }
-            if (event.target === authModal) { // Fermer la modale d'authentification en cliquant en dehors
+            if (event.target === authModal) {
                 authModal.style.display = 'none';
+            }
+            if (event.target === runDetailsModal) { // Fermer la modale de détails de course en cliquant en dehors
+                runDetailsModal.style.display = 'none';
+                // Détruire l'instance de la carte Leaflet quand la modale est fermée
+                if (L.DomUtil.get('runDetailsMap')._leaflet_id) {
+                    L.DomUtil.get('runDetailsMap')._leaflet_id = null; // Réinitialiser l'ID Leaflet
+                    runDetailsMapContainer.innerHTML = ''; // Vider le conteneur
+                }
             }
         });
 
@@ -991,7 +1143,6 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Correction du chemin du Service Worker
                 navigator.serviceWorker.register('/running/service-worker.js')
                     .then(registration => {
                         console.log('ServiceWorker enregistré avec succès :', registration);
