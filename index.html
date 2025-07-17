@@ -57,8 +57,8 @@
         #metrics {
             display: flex;
             flex-wrap: wrap;
-            justify-content.space-around;
-            gap: 20px;
+            justify-content: space-around;
+            gap: 20px; /* Espace entre les éléments */
             margin-bottom: 30px;
         }
 
@@ -67,9 +67,9 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            /* Force 2 colonnes sur toutes les tailles d'écran */
-            flex: 1 1 calc(50% - 40px); /* Deux colonnes */
-            min-width: 150px;
+            /* Force 2 colonnes sur toutes les tailles d'écran, en tenant compte du gap */
+            flex: 0 0 calc(50% - 10px); /* 50% de la largeur du conteneur moins la moitié du gap */
+            box-sizing: border-box; /* Inclure padding et border dans la largeur */
         }
 
         .metric-item .label {
@@ -341,13 +341,7 @@
         }
 
 
-        /* Responsive pour les écrans plus grands */
-        /* Supprimé pour forcer 2 colonnes partout */
-        /* @media (min-width: 768px) {
-            .metric-item {
-                flex: 1 1 calc(25% - 40px);
-            }
-        } */
+        /* La section media query pour 4 colonnes a été supprimée pour forcer 2 colonnes partout */
     </style>
     <!-- Pour les fonctionnalités PWA, ces liens sont nécessaires mais les fichiers doivent exister séparément -->
     <link rel="manifest" href="manifest.json">
@@ -522,7 +516,7 @@
         const confirmStopModal = document.getElementById('confirmStopModal');
         const closeConfirmStopModalButton = document.getElementById('closeConfirmStopModal');
         const saveAndStopButton = document.getElementById('saveAndStopButton');
-        const discardAndStopButton = document.getElementById('discardAndStopButton');
+        const discardAndStopButton = document = document.getElementById('discardAndStopButton');
         const cancelStopButton = document.getElementById('cancelStopButton');
 
         // Nouveaux éléments pour l'authentification
@@ -734,6 +728,7 @@
                 currentMap.remove();
                 currentMap = null;
             }
+            speedDisplay.classList.remove('speed-optimal', 'speed-suboptimal'); // Réinitialiser la couleur de la vitesse
         }
 
         function getShowTime() {
@@ -787,12 +782,17 @@
                         speedDisplay.textContent = currentSpeedKmh.toFixed(1) + ' km/h';
 
                         // Appliquer la couleur à la vitesse instantanée
+                        console.log("Vitesse instantanée:", currentSpeedKmh.toFixed(1), "km/h");
+                        console.log("Vitesse optimale min:", minOptimalSpeed, "max:", maxOptimalSpeed);
+
                         if (currentSpeedKmh >= minOptimalSpeed && currentSpeedKmh <= maxOptimalSpeed) {
                             speedDisplay.classList.remove('speed-suboptimal');
                             speedDisplay.classList.add('speed-optimal');
+                            console.log("Vitesse: OPTIMALE (vert)");
                         } else {
                             speedDisplay.classList.remove('speed-optimal');
                             speedDisplay.classList.add('speed-suboptimal');
+                            console.log("Vitesse: SOUS-OPTIMALE (rouge)");
                         }
 
                     },
@@ -1055,11 +1055,14 @@
 
                     // Afficher la carte du parcours
                     if (runData.trackPoints) {
+                        console.log("runData.trackPoints (avant parse):", runData.trackPoints);
                         try {
                             const parsedTrackPoints = JSON.parse(runData.trackPoints);
+                            console.log("parsedTrackPoints (après parse):", parsedTrackPoints);
                             if (parsedTrackPoints && parsedTrackPoints.length > 0) {
                                 displayMap(parsedTrackPoints, 'runDetailsMap'); // Utilise la carte de la modale
                             } else {
+                                console.warn("TrackPoints parsés sont vides ou invalides.");
                                 runDetailsMapContainer.innerHTML = '<p style="text-align: center; padding-top: 100px;">Pas de données de parcours valides.</p>';
                             }
                         } catch (parseError) {
@@ -1067,6 +1070,7 @@
                             runDetailsMapContainer.innerHTML = '<p style="text-align: center; padding-top: 100px; color: red;">Erreur de données de parcours.</p>';
                         }
                     } else {
+                        console.warn("runData.trackPoints est vide ou non défini.");
                         runDetailsMapContainer.innerHTML = '<p style="text-align: center; padding-top: 100px;">Pas de données de parcours.</p>';
                     }
 
