@@ -138,10 +138,10 @@
             width: 100%; /* Pleine largeur */
             height: 100%; /* Pleine hauteur */
             overflow: auto; /* Permet le scroll si le contenu est trop grand */
-            background-color: rgba(0,0,0,0.4); /* Fond semi-transparent noir */
             display: flex; /* Utiliser flex pour centrer avec justify/align-items */
             justify-content: center; /* Centrer horizontalement */
             align-items: center; /* Centrer verticalement */
+            background-color: rgba(0,0,0,0.4); /* Fond semi-transparent noir */
         }
 
         .modal-content {
@@ -460,6 +460,7 @@
         let db;
         let auth;
         let userId = null; // Stocke l'ID de l'utilisateur Firebase
+        let wakeLock = null; // Variable pour stocker le WakeLockSentinel
 
         // Éléments du DOM
         const chronoDisplay = document.getElementById('chrono');
@@ -595,7 +596,7 @@
 
 
         // --- Fonctions du Chrono ---
-        function startChrono() {
+        async function startChrono() {
             if (!running) {
                 if (difference > 0 && !running) {
                     resetChrono();
@@ -609,10 +610,11 @@
                 stopButton.disabled = false;
                 statusDisplay.textContent = 'En cours...';
                 startTrackingGPS();
+                await requestWakeLock(); // Tenter d'acquérir le verrouillage d'écran
             }
         }
 
-        function pauseChrono() {
+        async function pauseChrono() {
             if (running) {
                 clearInterval(tInterval);
                 running = false;
@@ -621,6 +623,7 @@
                 stopButton.disabled = false;
                 statusDisplay.textContent = 'En pause';
                 stopTrackingGPS();
+                await releaseWakeLock(); // Libérer le verrouillage d'écran
             }
         }
 
@@ -654,10 +657,11 @@
             statusDisplay.textContent = 'Course enregistrée !';
             confirmStopModal.style.display = 'none';
             displayMap(); 
+            await releaseWakeLock(); // Libérer le verrouillage d'écran
         }
 
         // Fonction pour arrêter sans enregistrer la course
-        function stopWithoutSavingRun() {
+        async function stopWithoutSavingRun() {
             clearInterval(tInterval);
             stopTrackingGPS();
             running = false;
@@ -670,6 +674,7 @@
 
             statusDisplay.textContent = 'Prêt(e)';
             confirmStopModal.style.display = 'none';
+            await releaseWakeLock(); // Libérer le verrouillage d'écran
         }
 
         function resetChrono() {
@@ -921,6 +926,35 @@
             });
         }
 
+        // --- Fonctions Wake Lock ---
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Wake Lock a été relâché.');
+                    });
+                    console.log('Wake Lock acquis !');
+                } catch (err) {
+                    console.error(`${err.name}, ${err.message}`);
+                    displayCustomAlert("Erreur Wake Lock", "Impossible de maintenir l'écran allumé.");
+                }
+            } else {
+                console.warn("L'API Wake Lock n'est pas supportée par ce navigateur.");
+            }
+        }
+
+        async function releaseWakeLock() {
+            if (wakeLock) {
+                try {
+                    await wakeLock.release();
+                    wakeLock = null;
+                    console.log('Wake Lock libéré.');
+                } catch (err) {
+                    console.error(`Erreur lors de la libération du Wake Lock: ${err.name}, ${err.message}`);
+                }
+            }
+        }
 
         // --- Événements ---
         startButton.addEventListener('click', startChrono);
@@ -986,6 +1020,15 @@
                 authModal.style.display = 'none';
             }
         });
+
+        // Gérer le ré-acquisition du wake lock si la page redevient visible et que la course est en cours
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible' && running) {
+                console.log('Page visible, tentant de ré-acquérir le Wake Lock.');
+                await requestWakeLock();
+            }
+        });
+
 
         document.addEventListener('DOMContentLoaded', loadSettings);
 
