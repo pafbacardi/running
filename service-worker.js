@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = 'running-app-cache-v1.0.5'; // Incrémente ce numéro à chaque modification majeure
+const CACHE_NAME = 'running-app-cache-v1.0.8'; // Incrémente ce numéro à chaque modification majeure
 const urlsToCache = [
   '/running/', // La racine de ton application GitHub Pages
   '/running/index.html',
@@ -60,4 +60,3 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
-
