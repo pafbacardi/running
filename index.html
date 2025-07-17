@@ -18,7 +18,7 @@
         }
 
         header {
-            background-color: #4CAF50; /* Vert pour la course */
+            background-color: #7d00a5; /* Vert pour la course */
             color: white;
             padding: 15px 0;
             display: flex;
@@ -96,6 +96,14 @@
             font-size: 1.4em; /* Réduit la taille de la police ici */
             font-weight: bold;
             color: #333;
+        }
+
+        /* Nouvelles classes pour la couleur de la vitesse */
+        .speed-optimal {
+            color: #28a745; /* Vert */
+        }
+        .speed-non-optimal {
+            color: #dc3545; /* Rouge */
         }
 
         /* Styles généraux pour les boutons de contrôle */
@@ -345,7 +353,7 @@
         <h1>Ma Course</h1>
         <button id="authButton">Connexion</button>
         <button id="settingsButton">⚙️ Paramètres</button>
-        <span id="versionDisplay">v1.0.7</span>
+        <span id="versionDisplay">v1.0.9</span>
     </header>
 
     <div id="loadingScreen">
@@ -541,18 +549,26 @@
                     userId = user.uid;
                     console.log("Utilisateur Firebase authentifié :", userId);
                     userStatusDisplay.textContent = `Connecté(e) : ${user.displayName || user.email || 'Anonyme'}`;
-                    authButton.textContent = 'Déconnexion';
-                    logoutButton.style.display = 'block';
-                    googleSignInButton.style.display = 'none';
                     authTitle.textContent = 'Informations du compte';
                     loadPastRuns(); // Charger les courses précédentes
+
+                    // Logique pour les boutons d'authentification
+                    if (user.isAnonymous) {
+                        authButton.textContent = 'Connexion'; // Permet de se connecter avec Google
+                        googleSignInButton.style.display = 'block'; // Affiche le bouton Google
+                        logoutButton.style.display = 'block'; // Permet de se déconnecter de l'anonyme
+                    } else {
+                        authButton.textContent = 'Déconnexion'; // Si connecté avec Google
+                        googleSignInButton.style.display = 'none'; // Cache le bouton Google
+                        logoutButton.style.display = 'block'; // Permet de se déconnecter
+                    }
                 } else {
                     userId = null;
                     console.log("Aucun utilisateur Firebase connecté.");
                     userStatusDisplay.textContent = 'Non connecté(e)';
                     authButton.textContent = 'Connexion';
-                    logoutButton.style.display = 'none';
-                    googleSignInButton.style.display = 'block';
+                    googleSignInButton.style.display = 'block'; // Affiche le bouton Google
+                    logoutButton.style.display = 'none'; // Cache le bouton de déconnexion
                     authTitle.textContent = 'Connexion';
                     pastRunsList.innerHTML = '<li style="text-align: center; color: #666;">Connectez-vous pour voir vos courses.</li>';
 
@@ -756,11 +772,23 @@
 
                         let currentSpeedKmh = speed ? (speed * 3.6).toFixed(1) : '0.0';
                         speedDisplay.textContent = currentSpeedKmh + ' km/h';
+
+                        // Appliquer la couleur à la vitesse instantanée
+                        const speedValue = parseFloat(currentSpeedKmh);
+                        speedDisplay.classList.remove('speed-optimal', 'speed-non-optimal'); // Supprimer les classes précédentes
+                        if (speedValue >= minOptimalSpeed && speedValue <= maxOptimalSpeed) {
+                            speedDisplay.classList.add('speed-optimal');
+                        } else if (speedValue > 0) { // Appliquer rouge seulement si la vitesse est non nulle et non optimale
+                            speedDisplay.classList.add('speed-non-optimal');
+                        }
+                        // Si speedValue est 0, la couleur par défaut (noir) est conservée.
                     },
                     (error) => {
                         console.error("Erreur GPS :", error);
                         statusDisplay.textContent = 'Erreur GPS !';
                         speak("Problème de signal GPS.");
+                        speedDisplay.classList.remove('speed-optimal', 'speed-non-optimal'); // Réinitialiser la couleur en cas d'erreur
+                        speedDisplay.style.color = '#333'; // Revenir à la couleur par défaut
                     },
                     {
                         enableHighAccuracy: true,
@@ -779,6 +807,8 @@
                 navigator.geolocation.clearWatch(watchId);
                 watchId = null;
             }
+            speedDisplay.classList.remove('speed-optimal', 'speed-non-optimal'); // Réinitialiser la couleur à l'arrêt
+            speedDisplay.style.color = '#333'; // Revenir à la couleur par défaut
         }
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -1014,13 +1044,21 @@
         // Événements pour la modale d'authentification
         authButton.addEventListener('click', () => {
             authModal.style.display = 'flex'; // Utiliser flex pour centrer avec justify/align-items
-            if (auth.currentUser) { // Si déjà connecté
-                googleSignInButton.style.display = 'none'; // Masque le bouton Google
-                logoutButton.style.display = 'block'; // Affiche le bouton de déconnexion
-                authTitle.textContent = 'Informations du compte';
-            } else { // Si non connecté
-                googleSignInButton.style.display = 'block'; // Affiche le bouton Google
-                logoutButton.style.display = 'none'; // Masque le bouton de déconnexion
+            // La logique d'affichage des boutons à l'intérieur de la modale est maintenant gérée par onAuthStateChanged
+            // lors de l'ouverture de la modale, on s'assure que l'état est à jour
+            if (auth.currentUser) {
+                if (auth.currentUser.isAnonymous) {
+                    googleSignInButton.style.display = 'block';
+                    logoutButton.style.display = 'block';
+                    authTitle.textContent = 'Connexion / Mode Invité';
+                } else {
+                    googleSignInButton.style.display = 'none';
+                    logoutButton.style.display = 'block';
+                    authTitle.textContent = 'Informations du compte';
+                }
+            } else {
+                googleSignInButton.style.display = 'block';
+                logoutButton.style.display = 'none';
                 authTitle.textContent = 'Connexion';
             }
         });
