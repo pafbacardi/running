@@ -139,6 +139,7 @@
             height: 100%; /* Pleine hauteur */
             overflow: auto; /* Permet le scroll si le contenu est trop grand */
             background-color: rgba(0,0,0,0.4); /* Fond semi-transparent noir */
+            display: flex; /* Utiliser flex pour centrer avec justify/align-items */
             justify-content: center; /* Centrer horizontalement */
             align-items: center; /* Centrer verticalement */
         }
@@ -245,6 +246,16 @@
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #eee;
+            cursor: pointer; /* Indiquer que l'élément est cliquable */
+            transition: background-color 0.2s ease;
+        }
+        #pastRunsList li:hover {
+            background-color: #e9e9e9;
+        }
+        #pastRunsList li strong {
+            display: block; /* La date sur une ligne séparée */
+            margin-bottom: 5px;
+            font-size: 1.1em;
         }
 
         /* Styles pour la modale d'authentification */
@@ -889,12 +900,18 @@
 
                 runs.forEach((run) => {
                     const li = document.createElement('li');
+                    li.classList.add('past-run-item'); // Ajout d'une classe pour le style si besoin
+                    li.dataset.runId = run.id; // Stocke l'ID du document Firebase
+
                     const date = run.timestamp ? new Date(run.timestamp.seconds * 1000).toLocaleString('fr-FR') : 'Date inconnue';
+                    const distanceKm = run.distance ? run.distance.toFixed(2) : '0.00';
+                    const avgSpeedKmh = run.averageSpeed ? run.averageSpeed.toFixed(1) : '0.0';
+
                     li.innerHTML = `
                         <strong>${date}</strong><br>
                         Durée: ${run.chrono || 'N/A'}<br>
-                        Distance: ${run.distance ? run.distance.toFixed(2) + ' km' : 'N/A'}<br>
-                        Vitesse moyenne: ${run.averageSpeed ? run.averageSpeed.toFixed(1) + ' km/h' : 'N/A'}
+                        Distance: ${distanceKm} km<br>
+                        Vitesse moyenne: ${avgSpeedKmh} km/h
                     `;
                     pastRunsList.appendChild(li);
                 });
@@ -911,13 +928,13 @@
 
         stopButton.addEventListener('click', () => {
             if (difference > 0) {
-                confirmStopModal.style.display = 'flex'; // CORRIGÉ
+                confirmStopModal.style.display = 'flex';
             }
         });
 
         settingsButton.addEventListener('click', () => {
             loadSettings();
-            settingsModal.style.display = 'flex'; // CORRIGÉ
+            settingsModal.style.display = 'flex';
         });
 
         closeSettingsModalButton.addEventListener('click', () => {
