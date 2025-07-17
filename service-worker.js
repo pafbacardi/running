@@ -1,6 +1,6 @@
 // service-worker.js
 
-const CACHE_NAME = 'running-app-cache-v1.0.8'; // Incrémente ce numéro à chaque modification majeure
+const CACHE_NAME = 'running-app-cache-v1.0.9'; // Incrémente ce numéro à chaque modification majeure
 const urlsToCache = [
   '/running/', // La racine de ton application GitHub Pages
   '/running/index.html',
@@ -57,6 +57,7 @@ self.addEventListener('fetch', (event) => {
         console.error('[Service Worker] Erreur de récupération :', error);
         // Tu peux ici retourner une page hors ligne si la ressource n'est pas dans le cache et le réseau est indisponible
         // Exemple: return caches.match('/running/offline.html');
-      })
+      });
   );
 });
+
