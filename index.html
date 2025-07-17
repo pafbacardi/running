@@ -93,7 +93,7 @@
         }
 
         .metric-item .value {
-            font-size: 2.2em;
+            font-size: 1.8em; /* Réduit la taille de la police ici */
             font-weight: bold;
             color: #333;
         }
@@ -344,7 +344,7 @@
         <h1>Ma Course</h1>
         <button id="authButton">Connexion</button>
         <button id="settingsButton">⚙️ Paramètres</button>
-        <span id="versionDisplay">v1.0.4</span>
+        <span id="versionDisplay">v1.0.6</span>
     </header>
 
     <div id="loadingScreen">
@@ -628,8 +628,8 @@
             if (running) {
                 clearInterval(tInterval);
                 running = false;
-                startButton.disabled = false;
-                pauseButton.disabled = true;
+                startButton.disabled = true;
+                pauseButton.disabled = false;
                 stopButton.disabled = false;
                 statusDisplay.textContent = 'En pause';
                 stopTrackingGPS();
