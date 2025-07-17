@@ -93,7 +93,7 @@
         }
 
         .metric-item .value {
-            font-size: 1.5em; /* Réduit la taille de la police ici */
+            font-size: 1.4em; /* Réduit la taille de la police ici */
             font-weight: bold;
             color: #333;
         }
@@ -320,9 +320,10 @@
 
 
         /* Masquer la section principale si l'utilisateur n'est pas connecté */
-        #appContent {
+        /* appContent est maintenant toujours visible pour le mode invité */
+        /* #appContent {
             display: none;
-        }
+        } */
         #loadingScreen {
             display: flex;
             justify-content: center;
@@ -351,7 +352,7 @@
         Chargement de l'application...
     </div>
 
-    <div id="appContent">
+    <div id="appContent" style="display: block;">
         <main>
             <section id="metrics">
                 <div class="metric-item">
@@ -534,33 +535,40 @@
 
             onAuthStateChanged(auth, async (user) => {
                 loadingScreen.style.display = 'none'; // Cacher l'écran de chargement
+                appContent.style.display = 'block'; // Toujours afficher le contenu de l'app
+
                 if (user) {
                     userId = user.uid;
                     console.log("Utilisateur Firebase authentifié :", userId);
                     userStatusDisplay.textContent = `Connecté(e) : ${user.displayName || user.email || 'Anonyme'}`;
-                    authButton.textContent = 'Déconnexion'; // Change le texte du bouton d'authentification
-                    logoutButton.style.display = 'block'; // Affiche le bouton de déconnexion
-                    googleSignInButton.style.display = 'none'; // Masque le bouton Google si déjà connecté
+                    authButton.textContent = 'Déconnexion';
+                    logoutButton.style.display = 'block';
+                    googleSignInButton.style.display = 'none';
                     authTitle.textContent = 'Informations du compte';
-                    appContent.style.display = 'block'; // Afficher le contenu de l'app
                     loadPastRuns(); // Charger les courses précédentes
                 } else {
                     userId = null;
                     console.log("Aucun utilisateur Firebase connecté.");
                     userStatusDisplay.textContent = 'Non connecté(e)';
-                    authButton.textContent = 'Connexion'; // Change le texte du bouton d'authentification
-                    logoutButton.style.display = 'none'; // Cache le bouton de déconnexion
-                    googleSignInButton.style.display = 'block'; // Affiche le bouton Google si non connecté
+                    authButton.textContent = 'Connexion';
+                    logoutButton.style.display = 'none';
+                    googleSignInButton.style.display = 'block';
                     authTitle.textContent = 'Connexion';
-                    appContent.style.display = 'none'; // Masquer le contenu de l'app si non connecté
                     pastRunsList.innerHTML = '<li style="text-align: center; color: #666;">Connectez-vous pour voir vos courses.</li>';
-                    // Tente de se connecter anonymement si aucun utilisateur n'est connecté et qu'il y a un token initial
-                    if (initialAuthToken) {
-                        try {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } catch (error) {
-                            console.error("Erreur d'authentification anonyme avec token initial:", error);
+
+                    // Tenter de se connecter anonymement si personne n'est connecté
+                    try {
+                        if (!auth.currentUser) { // Seulement si aucun utilisateur n'est actuellement authentifié
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                            console.log("Tentative de connexion anonyme ou avec token initial.");
                         }
+                    } catch (error) {
+                        console.error("Erreur de connexion anonyme ou avec token initial:", error);
+                        displayCustomAlert("Erreur de connexion", "Impossible de se connecter en mode invité.");
                     }
                 }
             });
