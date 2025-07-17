@@ -67,7 +67,8 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            flex: 1 1 calc(50% - 40px); /* Deux colonnes sur mobile */
+            /* Force 2 colonnes sur toutes les tailles d'écran */
+            flex: 1 1 calc(50% - 40px); /* Deux colonnes */
             min-width: 150px;
         }
 
@@ -331,13 +332,22 @@
             color: #555;
         }
 
+        /* Styles pour la vitesse instantanée */
+        .speed-optimal {
+            color: #28a745; /* Vert */
+        }
+        .speed-suboptimal {
+            color: #dc3545; /* Rouge */
+        }
+
 
         /* Responsive pour les écrans plus grands */
-        @media (min-width: 768px) {
+        /* Supprimé pour forcer 2 colonnes partout */
+        /* @media (min-width: 768px) {
             .metric-item {
-                flex: 1 1 calc(25% - 40px); /* Quatre colonnes sur desktop */
+                flex: 1 1 calc(25% - 40px);
             }
-        }
+        } */
     </style>
     <!-- Pour les fonctionnalités PWA, ces liens sont nécessaires mais les fichiers doivent exister séparément -->
     <link rel="manifest" href="manifest.json">
@@ -773,8 +783,18 @@
                         }
                         lastPosition = { latitude, longitude };
 
-                        let currentSpeedKmh = speed ? (speed * 3.6).toFixed(1) : '0.0';
-                        speedDisplay.textContent = currentSpeedKmh + ' km/h';
+                        let currentSpeedKmh = speed ? (speed * 3.6) : 0.0; // Garder en nombre pour la comparaison
+                        speedDisplay.textContent = currentSpeedKmh.toFixed(1) + ' km/h';
+
+                        // Appliquer la couleur à la vitesse instantanée
+                        if (currentSpeedKmh >= minOptimalSpeed && currentSpeedKmh <= maxOptimalSpeed) {
+                            speedDisplay.classList.remove('speed-suboptimal');
+                            speedDisplay.classList.add('speed-optimal');
+                        } else {
+                            speedDisplay.classList.remove('speed-optimal');
+                            speedDisplay.classList.add('speed-suboptimal');
+                        }
+
                     },
                     (error) => {
                         console.error("Erreur GPS :", error);
@@ -797,6 +817,8 @@
             if (watchId) {
                 navigator.geolocation.clearWatch(watchId);
                 watchId = null;
+                // Réinitialiser la couleur de la vitesse après l'arrêt
+                speedDisplay.classList.remove('speed-optimal', 'speed-suboptimal');
             }
         }
 
@@ -905,12 +927,7 @@
             
             let mapInstance;
             try {
-                // Vérifie si une instance de carte existe déjà pour cet élément
-                if (mapElement._leaflet_id) {
-                    mapInstance = L.map(mapElementId).setView(points[0], 13);
-                } else {
-                    mapInstance = L.map(mapElementId).setView(points[0], 13);
-                }
+                mapInstance = L.map(mapElementId).setView(points[0], 13);
             } catch (e) {
                 console.error("Erreur lors de l'initialisation de la carte Leaflet:", e);
                 mapElement.innerHTML = '<p style="text-align: center; padding-top: 100px; color: red;">Erreur de chargement de la carte.</p>';
@@ -1009,13 +1026,21 @@
 
         // Nouvelle fonction pour afficher les détails d'une course
         async function showRunDetails(runId) {
+            console.log("showRunDetails appelée avec runId:", runId);
+            console.log("db:", db);
+            console.log("userId:", userId);
+            console.log("appId:", appId);
+
+
             if (!db || !userId || !runId) {
-                console.error("Impossible d'afficher les détails de la course: DB, User ID ou Run ID manquant.");
+                console.error("Impossible d'afficher les détails de la course: DB, User ID ou Run ID manquant. db:", !!db, "userId:", !!userId, "runId:", !!runId);
+                displayCustomAlert("Erreur", "Impossible d'afficher les détails de la course: informations manquantes.");
                 return;
             }
 
             try {
                 const runDocRef = doc(db, `artifacts/${appId}/users/${userId}/runs`, runId);
+                console.log("Chemin du document Firestore:", runDocRef.path);
                 const runDocSnap = await getDoc(runDocRef);
 
                 if (runDocSnap.exists()) {
@@ -1030,20 +1055,31 @@
 
                     // Afficher la carte du parcours
                     if (runData.trackPoints) {
-                        const parsedTrackPoints = JSON.parse(runData.trackPoints);
-                        displayMap(parsedTrackPoints, 'runDetailsMap'); // Utilise la carte de la modale
+                        try {
+                            const parsedTrackPoints = JSON.parse(runData.trackPoints);
+                            if (parsedTrackPoints && parsedTrackPoints.length > 0) {
+                                displayMap(parsedTrackPoints, 'runDetailsMap'); // Utilise la carte de la modale
+                            } else {
+                                runDetailsMapContainer.innerHTML = '<p style="text-align: center; padding-top: 100px;">Pas de données de parcours valides.</p>';
+                            }
+                        } catch (parseError) {
+                            console.error("Erreur de parsing des trackPoints:", parseError);
+                            runDetailsMapContainer.innerHTML = '<p style="text-align: center; padding-top: 100px; color: red;">Erreur de données de parcours.</p>';
+                        }
                     } else {
                         runDetailsMapContainer.innerHTML = '<p style="text-align: center; padding-top: 100px;">Pas de données de parcours.</p>';
                     }
 
                     runDetailsModal.style.display = 'flex'; // Afficher la modale
                 } else {
-                    console.warn("Aucun document trouvé pour l'ID de course:", runId);
-                    displayCustomAlert("Erreur", "Course non trouvée.");
+                    console.warn("Aucun document trouvé pour l'ID de course:", runId, "dans le chemin:", runDocRef.path);
+                    displayCustomAlert("Erreur", "Course non trouvée ou accès refusé.");
                 }
             } catch (error) {
                 console.error("Erreur lors de la récupération des détails de la course:", error);
-                displayCustomAlert("Erreur", "Impossible de charger les détails de la course.");
+                // Log l'objet d'erreur complet pour plus de détails
+                console.error("Détails de l'erreur Firestore:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
+                displayCustomAlert("Erreur", "Impossible de charger les détails de la course. Veuillez vérifier votre connexion et les permissions.");
             }
         }
 
