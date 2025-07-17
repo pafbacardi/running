@@ -18,7 +18,7 @@
         }
 
         header {
-            background-color: #7d00a5; /* Vert pour la course */
+            background-color: #7d00a5; /* Couleur de thème personnalisée */
             color: white;
             padding: 15px 0;
             display: flex;
@@ -153,7 +153,7 @@
 
         /* Styles pour les modales (génériques) */
         .modal {
-            display: none; /* Cachée par défaut - CORRIGÉ */
+            display: none; /* Cachée par défaut */
             position: fixed; /* Reste en place même en scrollant */
             z-index: 1; /* Par-dessus tout le reste */
             left: 0;
@@ -161,7 +161,7 @@
             width: 100%; /* Pleine largeur */
             height: 100%; /* Pleine hauteur */
             overflow: auto; /* Permet le scroll si le contenu est trop grand */
-            display: flex; /* Utiliser flex pour centrer avec justify/align-items */
+            /* display: flex; REMOVED THIS LINE - it was causing modals to show */
             justify-content: center; /* Centrer horizontalement */
             align-items: center; /* Centrer verticalement */
             background-color: rgba(0,0,0,0.4); /* Fond semi-transparent noir */
@@ -327,6 +327,23 @@
             display: none; /* Masquer ce bouton car on n'a plus email/password */
         }
 
+        /* Styles pour la nouvelle modale de détails de course */
+        #runDetailsModal .modal-content {
+            text-align: left;
+        }
+        #runDetailsModal #runDetailsMap {
+            height: 250px; /* Taille de la carte dans la modale */
+            background-color: #eee;
+            margin-top: 15px;
+            border-radius: 8px;
+        }
+        #runDetailsModal p {
+            margin-bottom: 8px;
+        }
+        #runDetailsModal strong {
+            font-size: 1.1em;
+        }
+
 
         /* Masquer la section principale si l'utilisateur n'est pas connecté */
         /* appContent est maintenant toujours visible pour le mode invité */
@@ -354,7 +371,7 @@
         <h1>Ma Course</h1>
         <button id="authButton">Connexion</button>
         <button id="settingsButton">⚙️ Paramètres</button>
-        <span id="versionDisplay">v1.0.10</span>
+        <span id="versionDisplay">v1.0.14</span>
     </header>
 
     <div id="loadingScreen">
@@ -448,7 +465,21 @@
             </button>
             <button id="logoutButton" style="display: none;">Se déconnecter</button>
             <!-- Le bouton toggleAuthMode est masqué car on n'a plus email/password -->
-            <!-- <button id="toggleAuthMode">Pas de compte ? S'inscrire</button> -->
+            <!-- <button id="toggleAuthMode">Pas de compte ? S'inscire</button> -->
+        </div>
+    </div>
+
+    <!-- Nouvelle Modale pour les détails de la course passée -->
+    <div id="runDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeRunDetailsModal">&times;</span>
+            <h2>Détails de la Course</h2>
+            <p><strong>Date:</strong> <span id="runDetailDate"></span></p>
+            <p><strong>Durée:</strong> <span id="runDetailChrono"></span></p>
+            <p><strong>Distance:</strong> <span id="runDetailDistance"></span></p>
+            <p><strong>Vitesse moyenne:</strong> <span id="runDetailAverageSpeed"></span></p>
+            <!-- Suppression de "Vitesse à l'arrêt" -->
+            <div id="runDetailsMap" style="height: 250px; background-color: #eee;"></div>
         </div>
     </div>
 
@@ -519,6 +550,17 @@
         const userStatusDisplay = document.getElementById('userStatus');
         const appContent = document.getElementById('appContent');
         const loadingScreen = document.getElementById('loadingScreen');
+
+        // Nouveaux éléments pour la modale de détails de course
+        const runDetailsModal = document.getElementById('runDetailsModal');
+        const closeRunDetailsModalButton = document.getElementById('closeRunDetailsModal');
+        const runDetailDate = document.getElementById('runDetailDate');
+        const runDetailChrono = document.getElementById('runDetailChrono');
+        const runDetailDistance = document.getElementById('runDetailDistance');
+        const runDetailAverageSpeed = document.getElementById('runDetailAverageSpeed');
+        // const runDetailInstantSpeed = document.getElementById('runDetailInstantSpeed'); // Supprimé
+        const runDetailsMapContainer = document.getElementById('runDetailsMap');
+
 
         // Variables de l'application
         let watchId; // ID pour le suivi GPS
@@ -637,7 +679,7 @@
                     resetChrono();
                 }
                 
-                startTime = new Date().getTime() - difference;
+                startTime = new Date().getTime(); // Réinitialiser le temps de début à chaque nouveau départ
                 tInterval = setInterval(getShowTime, 1);
                 running = true;
                 startButton.disabled = true;
@@ -669,9 +711,9 @@
             running = false;
 
             // Vérifie si l'utilisateur est connecté avant de tenter de sauvegarder
-            if (!userId) {
-                speak("Veuillez vous connecter pour enregistrer votre course.");
-                displayCustomAlert("Sauvegarde impossible", "Veuillez vous connecter pour enregistrer votre course.");
+            if (!userId || auth.currentUser.isAnonymous) { // Empêcher la sauvegarde si anonyme
+                speak("Veuillez vous connecter avec un compte Google pour enregistrer votre course.");
+                displayCustomAlert("Sauvegarde impossible", "Veuillez vous connecter avec un compte Google pour enregistrer votre course.");
                 confirmStopModal.style.display = 'none';
                 return;
             }
@@ -679,9 +721,10 @@
             const runData = {
                 chrono: chronoDisplay.textContent,
                 distance: distance,
-                speed: parseFloat(speedDisplay.textContent),
+                // speed: parseFloat(speedDisplay.textContent), // Vitesse instantanée à l'arrêt - Supprimé
                 averageSpeed: parseFloat(averageSpeedDisplay.textContent),
-                trackPoints: JSON.stringify(trackPoints)
+                trackPoints: JSON.stringify(trackPoints),
+                timestamp: new Date() // Ajout du timestamp pour le tri
             };
 
             await saveRunToFirestore(runData);
@@ -691,7 +734,7 @@
             stopButton.disabled = true;
             statusDisplay.textContent = 'Course enregistrée !';
             confirmStopModal.style.display = 'none';
-            displayMap(); 
+            displayMap(mapContainer, trackPoints); // Afficher la carte après la course
             await releaseWakeLock(); // Libérer le verrouillage d'écran
         }
 
@@ -722,6 +765,8 @@
             speedDisplay.textContent = '0.0 km/h';
             averageSpeedDisplay.textContent = '0.0 km/h';
             mapContainer.innerHTML = '<p style="text-align: center; padding-top: 130px;">Carte du parcours (après la course)</p>';
+            speedDisplay.classList.remove('speed-optimal', 'speed-non-optimal'); // Réinitialiser la couleur
+            speedDisplay.style.color = '#333'; // Revenir à la couleur par défaut
         }
 
         function getShowTime() {
@@ -869,13 +914,22 @@
             speak("Paramètres de vitesse enregistrés !");
         }
 
-        // --- Initialisation de la carte (après la course) ---
-        function displayMap() {
-            if (trackPoints.length === 0) {
-                mapContainer.innerHTML = '<p style="text-align: center; padding-top: 130px;">Pas de parcours enregistré.</p>';
+        // --- Initialisation de la carte (générique pour l'affichage principal et les détails) ---
+        let currentMapInstance = null; // Pour stocker l'instance de la carte Leaflet
+
+        function displayMap(targetContainer, points) {
+            // Détruire l'instance de carte existante si elle existe pour éviter les conflits
+            if (currentMapInstance) {
+                currentMapInstance.remove();
+                currentMapInstance = null;
+            }
+
+            if (!points || points.length === 0) {
+                targetContainer.innerHTML = '<p style="text-align: center; padding-top: 130px;">Pas de parcours enregistré.</p>';
                 return;
             }
 
+            // Charger Leaflet si ce n'est pas déjà fait
             if (typeof L === 'undefined') {
                 const leafletCss = document.createElement('link');
                 leafletCss.rel = 'stylesheet';
@@ -884,25 +938,36 @@
 
                 const leafletJs = document.createElement('script');
                 leafletJs.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-                leafletJs.onload = initializeMapWithLeaflet;
+                leafletJs.onload = () => initializeMapWithLeaflet(targetContainer, points);
                 document.head.appendChild(leafletJs);
             } else {
-                initializeMapWithLeaflet();
+                initializeMapWithLeaflet(targetContainer, points);
             }
         }
 
-        function initializeMapWithLeaflet() {
-            mapContainer.innerHTML = '';
-            mapContainer.id = 'mapid';
+        function initializeMapWithLeaflet(targetContainer, points) {
+            targetContainer.innerHTML = ''; // Nettoyer le conteneur
+            
+            // Assurez-vous que le conteneur a un ID unique pour Leaflet
+            const mapId = targetContainer.id || 'tempMapId';
+            targetContainer.id = mapId; // Assigner un ID si non existant
 
-            const map = L.map('mapid').setView(trackPoints[0], 13);
+            const map = L.map(mapId).setView(points[0], 13);
+            currentMapInstance = map; // Stocker l'instance de la carte
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
 
-            const polyline = L.polyline(trackPoints, { color: 'blue' }).addTo(map);
+            const polyline = L.polyline(points, { color: 'blue' }).addTo(map);
             map.fitBounds(polyline.getBounds());
+
+            // Invalider la taille de la carte après l'affichage de la modale pour s'assurer qu'elle est bien rendue
+            if (targetContainer === runDetailsMapContainer) {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100); // Petit délai pour laisser la modale s'ouvrir
+            }
         }
 
 
@@ -939,13 +1004,13 @@
             const runsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/runs`);
             onSnapshot(runsCollectionRef, (snapshot) => {
                 pastRunsList.innerHTML = '';
+                const runs = []; // Stocker les données complètes des courses
 
                 if (snapshot.empty) {
                     pastRunsList.innerHTML = '<li style="text-align: center; color: #666;">Aucune course enregistrée pour le moment.</li>';
                     return;
                 }
 
-                const runs = [];
                 snapshot.forEach((doc) => {
                     runs.push({ id: doc.id, ...doc.data() });
                 });
@@ -956,6 +1021,9 @@
                     const li = document.createElement('li');
                     li.classList.add('past-run-item'); // Ajout d'une classe pour le style si besoin
                     li.dataset.runId = run.id; // Stocke l'ID du document Firebase
+                    
+                    // Stocke la course complète dans le dataset pour un accès facile
+                    li.runData = run; 
 
                     const date = run.timestamp ? new Date(run.timestamp.seconds * 1000).toLocaleString('fr-FR') : 'Date inconnue';
                     const distanceKm = run.distance ? run.distance.toFixed(2) : '0.00';
@@ -968,12 +1036,37 @@
                         Vitesse moyenne: ${avgSpeedKmh} km/h
                     `;
                     pastRunsList.appendChild(li);
+
+                    // Ajout de l'écouteur d'événement pour afficher les détails
+                    li.addEventListener('click', () => showRunDetails(run));
                 });
             }, (error) => {
                 console.error("Erreur lors du chargement des courses :", error);
                 pastRunsList.innerHTML = '<li style="text-align: center; color: #dc3545;">Erreur de chargement des courses.</li>';
             });
         }
+
+        // Fonction pour afficher les détails d'une course
+        function showRunDetails(run) {
+            runDetailDate.textContent = run.timestamp ? new Date(run.timestamp.seconds * 1000).toLocaleString('fr-FR') : 'N/A';
+            runDetailChrono.textContent = run.chrono || 'N/A';
+            runDetailDistance.textContent = `${run.distance ? run.distance.toFixed(2) : '0.00'} km`;
+            runDetailAverageSpeed.textContent = `${run.averageSpeed ? run.averageSpeed.toFixed(1) : '0.0'} km/h`;
+            // runDetailInstantSpeed.textContent = `${run.speed ? run.speed.toFixed(1) : 'N/A'} km/h`; // Supprimé
+
+            let parsedTrackPoints = [];
+            try {
+                parsedTrackPoints = run.trackPoints ? JSON.parse(run.trackPoints) : [];
+            } catch (e) {
+                console.error("Erreur de parsing des points de parcours :", e);
+            }
+            
+            // Afficher la carte dans la modale des détails
+            displayMap(runDetailsMapContainer, parsedTrackPoints);
+
+            runDetailsModal.style.display = 'flex'; // Afficher la modale
+        }
+
 
         // --- Fonctions Wake Lock ---
         async function requestWakeLock() {
@@ -1016,7 +1109,7 @@
         pauseButton.addEventListener('click', pauseChrono);
 
         stopButton.addEventListener('click', () => {
-            if (difference > 0) {
+            if (running) { // S'assurer que la course est en cours pour afficher la modale d'arrêt
                 confirmStopModal.style.display = 'flex';
             }
         });
@@ -1071,16 +1164,33 @@
         googleSignInButton.addEventListener('click', signInWithGoogle); // Événement pour le bouton Google
         logoutButton.addEventListener('click', handleLogout);
 
+        // Événement pour fermer la modale de détails de course
+        closeRunDetailsModalButton.addEventListener('click', () => {
+            runDetailsModal.style.display = 'none';
+            if (currentMapInstance) {
+                currentMapInstance.remove(); // Détruire l'instance de la carte
+                currentMapInstance = null;
+            }
+        });
+
 
         window.addEventListener('click', (event) => {
+            // Fermer les modales en cliquant en dehors
             if (event.target === settingsModal) {
                 settingsModal.style.display = 'none';
             }
             if (event.target === confirmStopModal) {
                 confirmStopModal.style.display = 'none';
             }
-            if (event.target === authModal) { // Fermer la modale d'authentification en cliquant en dehors
+            if (event.target === authModal) {
                 authModal.style.display = 'none';
+            }
+            if (event.target === runDetailsModal) { // Nouvelle modale de détails
+                runDetailsModal.style.display = 'none';
+                if (currentMapInstance) {
+                    currentMapInstance.remove(); // Détruire l'instance de la carte
+                    currentMapInstance = null;
+                }
             }
         });
 
