@@ -95,15 +95,16 @@
         .metric-item .value {
             font-size: 1.4em; /* Réduit la taille de la police ici */
             font-weight: bold;
-            color: #333;
+            color: #333; /* Couleur par défaut */
         }
 
         /* Nouvelles classes pour la couleur de la vitesse */
+        /* Utilisation de !important pour assurer la priorité sur la couleur par défaut */
         .speed-optimal {
-            color: #28a745; /* Vert */
+            color: #28a745 !important; /* Vert */
         }
         .speed-non-optimal {
-            color: #dc3545; /* Rouge */
+            color: #dc3545 !important; /* Rouge */
         }
 
         /* Styles généraux pour les boutons de contrôle */
@@ -353,7 +354,7 @@
         <h1>Ma Course</h1>
         <button id="authButton">Connexion</button>
         <button id="settingsButton">⚙️ Paramètres</button>
-        <span id="versionDisplay">v1.0.9</span>
+        <span id="versionDisplay">v1.0.10</span>
     </header>
 
     <div id="loadingScreen">
